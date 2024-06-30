@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     # Local app
     'users.apps.UsersConfig',
+    'pages.apps.PagesConfig',
     'innovacare.apps.InnovacareConfig',
 ]
 
