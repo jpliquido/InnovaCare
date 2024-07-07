@@ -1,0 +1,19 @@
+{% extends 'innovacare/homebase.html' %}
+
+{% block content %}
+
+<br>
+<br>
+
+<div class="jumbotron" style="margin-bottom:0px;">
+  <h1 class="display-4" style="text-align:center;">Welcome to InnovaCare</h1>
+  <p>Your Health Is In Our Care</p>
+  <hr class="my-4">
+  <p>You can access various features after Login/SignUp.</p>
+  <p class="lead">
+    <a class="btn btn-primary btn-lg" href="{% url 'clientsignup' %}" role="button">Register Your Account</a>
+    <a class="btn btn-primary btn-lg" href="{% url 'clientlogin' %}" role="button">Login</a>
+  </p>
+</br></br></br>
+</div>
+{% endblock content %}
