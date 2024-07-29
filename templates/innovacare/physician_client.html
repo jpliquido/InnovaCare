@@ -1,22 +1,28 @@
-{% extends 'doctor_base.html' %}
+{% extends 'innovacare/physician_base.html' %}
 {% load static %}
 {% block content %}
 <br><br>
+
+
 <head>
   <meta charset="utf-8">
+
+
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
   <link href="http://netdna.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" rel="stylesheet">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css">
 
   <style type="text/css">
     a:link {
       text-decoration: none;
     }
-    .menu{
+
+    .menu {
       top: 50px;
     }
+
     h6 {
       color: white;
     }
@@ -32,6 +38,15 @@
     .bg-c-green {
       background: linear-gradient(45deg, #2ed8b6, #59e0c5);
     }
+
+    .bg-c-yellow {
+      background: linear-gradient(45deg, #FFB64D, #ffcb80);
+    }
+
+    .bg-c-pink {
+      background: linear-gradient(45deg, #FF5370, #ff869a);
+    }
+
 
     .card {
       border-radius: 5px;
@@ -61,36 +76,35 @@
   </style>
 </head>
 
-  <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
-  <div class="container">
-    <div class="row">
-      <div class="col-md-4 col-xl-6">
-        <div class="card bg-c-blue order-card">
-          <div class="card-block">
-            <a href="/doctor-view-appointment">
-              <h6 class="m-b-20">View Your Appointment</h6>
-            </a>
-            <br>
-            <h2 class="text-right"><i class="fas fa-calendar f-left"></i></h2>
+<link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+<div class="container">
+  <div class="row">
+    <div class="col-md-4 col-xl-6">
+      <div class="card bg-c-blue order-card">
+        <div class="card-block">
+          <a href="{% url 'physician-view-client' %}">
+            <h6 class="m-b-20">Client Record</h6>
+          </a>
+          <br>
+          <h2 class="text-right"><i class="fas fa-user-injured f-left"></i></h2>
 
-          </div>
         </div>
       </div>
+    </div>
 
-      <div class="col-md-4 col-xl-6">
-        <div class="card bg-c-green order-card">
-          <div class="card-block">
-            <a href="/doctor-delete-appointment">
-              <h6 class="m-b-20">Delete Appointment</h6>
-            </a>
-            <br>
-            <h2 class="text-right"><i class="fas fa-eject f-left"></i></h2>
-          </div>
+
+    <div class="col-md-4 col-xl-6">
+      <div class="card bg-c-pink order-card">
+        <div class="card-block">
+          <a href="{% url 'physician-view-discharge-client' %}">
+            <h6 class="m-b-20">Client Discharged</h6>
+          </a>
+          <br>
+          <h2 class="text-right"><i class="fas fa-eject f-left"></i></h2>
         </div>
       </div>
-
-
     </div>
   </div>
+</div>
 <br><br><br><br><br><br><br>
 {% endblock content %}

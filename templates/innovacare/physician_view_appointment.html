@@ -1,4 +1,4 @@
-{% extends 'doctor_base.html' %}
+{% extends 'innovacare/physician_base.html' %}
 {% block content %}
 {%load static%}
 
@@ -24,7 +24,7 @@
 <div class="container">
   <div class="panel panel-primary">
     <div class="panel-heading">
-      <h6 class="panel-title">Delete Your Appointments</h6>
+      <h6 class="panel-title">Your Appointments</h6>
     </div>
     <table class="table table-hover" id="dev-table">
       <thead>
@@ -32,7 +32,9 @@
           <th>Patient Name</th>
           <th>Picture</th>
           <th>Description</th>
-          <th>Delete</th>
+          <th>Mobile</th>
+          <th>Address</th>
+          <th>Appointment Date</th>
         </tr>
       </thead>
       {% for a,p in appointments %}
@@ -40,10 +42,13 @@
         <td>{{a.patientName}}</td>
         <td> <img src="{% static p.profile_pic.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
         <td>{{a.description}}</td>
-        <td><a class="btn btn-danger btn-xs" href="{% url 'delete-appointment' a.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
+        <td>{{p.mobile}}</td>
+        <td>{{p.address}}</td>
+        <td>{{a.appointmentDate}}</td>
       </tr>
       {% endfor %}
     </table>
   </div>
 </div>
+
 {% endblock content %}

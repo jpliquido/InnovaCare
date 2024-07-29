@@ -1,5 +1,6 @@
-{% extends 'admin_base.html' %}
+{% extends 'innovacare/physician_base.html' %}
 {% block content %}
+{%load static%}
 
 <head>
   <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
@@ -23,25 +24,29 @@
 <div class="container">
   <div class="panel panel-primary">
     <div class="panel-heading">
-      <h6 class="panel-title">Department & Doctors</h6>
+      <h6 class="panel-title">Your Total Patient List</h6>
     </div>
     <table class="table table-hover" id="dev-table">
       <thead>
         <tr>
-          <th>Department</th>
-          <th>Doctor Name</th>
+          <th>Name</th>
+          <th>Profile Picture</th>
+          <th>Symptoms</th>
           <th>Mobile</th>
+          <th>Address</th>
+
         </tr>
       </thead>
-      {% for d in doctors %}
+      {% for p in patients %}
       <tr>
-        <td>{{d.department}}</td>
-        <td> {{d.get_name}}</td>
-        <td>{{d.mobile}}</td>
+        <td> {{p.get_name}}</td>
+        <td> <img src="{% static p.profile_pic.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
+        <td>{{p.symptoms}}</td>
+        <td>{{p.mobile}}</td>
+        <td>{{p.address}}</td>
       </tr>
       {% endfor %}
     </table>
   </div>
 </div>
-
 {% endblock content %}

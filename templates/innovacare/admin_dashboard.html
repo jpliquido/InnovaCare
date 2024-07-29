@@ -1,13 +1,13 @@
-{% extends 'admin_base.html' %}
+{% extends 'innovacare/admin_base.html' %}
 {% load static %}
 {% block content %}
-{%include 'admin_dashboard_cards.html'%}
+{%include 'innovacare/admin_dashboard_cards.html'%}
 <br><br><br><br>
 <div class="container">
   <div class="row">
     <div class="panel panel-primary col-md-5" style="margin-left:2%;">
       <div class="panel-heading" style="text-align:center;">
-        <h6 class="panel-title">Recent Doctors</h6>
+        <h6 class="panel-title">Recent Physician</h6>
       </div>
       <table class="table table-hover" id="dev-table">
         <thead>
@@ -19,7 +19,7 @@
 
           </tr>
         </thead>
-        {% for d in doctors %}
+        {% for d in physicians %}
         <tr>
           <td> {{d.get_name}}</td>
           <td>{{d.department}}</td>
@@ -37,7 +37,7 @@
 
     <div class="panel panel-primary col-md-5" style="margin-left:5%;">
       <div class="panel-heading" style="text-align:center;">
-        <h6 class="panel-title">Recent Patient</h6>
+        <h6 class="panel-title">Recent Client</h6>
       </div>
       <table class="table table-hover" id="dev-table">
         <thead>
@@ -50,7 +50,7 @@
 
           </tr>
         </thead>
-        {% for p in patients %}
+        {% for p in clients %}
         <tr>
           <td> {{p.get_name}}</td>
           <td>{{p.symptoms}}</td>

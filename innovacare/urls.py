@@ -31,19 +31,19 @@ urlpatterns = [
 
     path('admin-dashboard/', views.admin_dashboard_view, name='admin-dashboard'),
 
-    path('admin-doctor/', views.admin_doctor_view,name='admin-doctor'),
-    path('admin-view-doctor/', views.admin_view_doctor_view,name='admin-view-doctor'),
+    path('admin-physician/', views.admin_physician_view,name='admin-physician'),
+    path('admin-view-physician/', views.admin_view_physician_view,name='admin-view-physician'),
     path('delete-doctor-from-hospital/<int:pk>', views.delete_doctor_from_hospital_view,name='delete-doctor-from-hospital'),
     path('update-doctor/<int:pk>', views.update_doctor_view,name='update-doctor'),
-    path('admin-add-doctor', views.admin_add_doctor_view,name='admin-add-doctor'),
-    path('admin-approve-doctor', views.admin_approve_doctor_view,name='admin-approve-doctor'),
+    path('admin-add-physician', views.admin_add_physician_view,name='admin-add-physician'),
+    path('admin-approve-physician', views.admin_approve_physician_view,name='admin-approve-physician'),
     path('approve-doctor/<int:pk>', views.approve_doctor_view,name='approve-doctor'),
     path('reject-doctor/<int:pk>', views.reject_doctor_view,name='reject-doctor'),
-    path('admin-view-doctor-specialisation',views.admin_view_doctor_specialisation_view,name='admin-view-doctor-specialisation'),
+    path('admin-view-physician-specialisation',views.admin_view_physician_specialisation_view,name='admin-view-physician-specialisation'),
 
 
-    path('admin-patient', views.admin_patient_view,name='admin-patient'),
-    path('admin-view-patient', views.admin_view_patient_view,name='admin-view-patient'),
+    path('admin-client', views.admin_client_view,name='admin-client'),
+    path('admin-view-client/', views.admin_view_client_view,name='admin-view-client'),
     path('delete-patient-from-hospital/<int:pk>', views.delete_patient_from_hospital_view,name='delete-patient-from-hospital'),
     path('update-patient/<int:pk>', views.update_patient_view,name='update-patient'),
     path('admin-add-patient', views.admin_add_patient_view,name='admin-add-patient'),
@@ -66,15 +66,15 @@ urlpatterns = [
 
 #---------FOR DOCTOR RELATED URLS-------------------------------------
 urlpatterns +=[
-    path('doctor-dashboard', views.doctor_dashboard_view,name='doctor-dashboard'),
+    path('physician-dashboard', views.physician_dashboard_view,name='physician-dashboard'),
 
-    path('doctor-patient', views.doctor_patient_view,name='doctor-patient'),
-    path('doctor-view-patient', views.doctor_view_patient_view,name='doctor-view-patient'),
-    path('doctor-view-discharge-patient',views.doctor_view_discharge_patient_view,name='doctor-view-discharge-patient'),
+    path('physician-client', views.physician_client_view,name='physician-client'),
+    path('physician-view-client', views.physician_view_client_view,name='physician-view-client'),
+    path('physician-view-discharge-client',views.physician_view_discharge_client_view,name='physician-view-discharge-client'),
 
-    path('doctor-appointment', views.doctor_appointment_view,name='doctor-appointment'),
-    path('doctor-view-appointment', views.doctor_view_appointment_view,name='doctor-view-appointment'),
-    path('doctor-delete-appointment',views.doctor_delete_appointment_view,name='doctor-delete-appointment'),
+    path('physician-appointment', views.physician_appointment_view,name='physician-appointment'),
+    path('physician-view-appointment', views.physician_view_appointment_view,name='physician-view-appointment'),
+    path('physician-delete-appointment',views.physician_delete_appointment_view,name='physician-delete-appointment'),
     path('delete-appointment/<int:pk>', views.delete_appointment_view,name='delete-appointment'),
 ]
 
@@ -84,9 +84,9 @@ urlpatterns +=[
 #---------FOR PATIENT RELATED URLS-------------------------------------
 urlpatterns +=[
 
-    path('patient-dashboard', views.patient_dashboard_view,name='patient-dashboard'),
+    path('patient-dashboard', views.patient_dashboard_view,name='client-dashboard'),
     path('patient-appointment', views.patient_appointment_view,name='patient-appointment'),
-    path('patient-book-appointment', views.patient_book_appointment_view,name='patient-book-appointment'),
+    path('patient-book-appointment', views.client_book_appointment_view,name='patient-book-appointment'),
     path('patient-view-appointment', views.patient_view_appointment_view,name='patient-view-appointment'),
     path('patient-discharge', views.patient_discharge_view,name='patient-discharge'),
 
