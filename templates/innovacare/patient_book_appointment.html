@@ -1,4 +1,4 @@
-{% extends 'innovacare/patient_base.html' %}
+{% extends 'innovacare/client_base.html' %}
 {% load widget_tweaks %}
 {% block content %}
 
@@ -47,7 +47,7 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 </head>
 <br><br>
-<!------ add appointment page by patient(sumit)  ---------->
+<!------ add appointment page by client  ---------->
 <form method="post">
   {% csrf_token %}
   <div class="container register-form">
@@ -65,9 +65,6 @@
               {% render_field appointmentForm.doctorId class="form-control" placeholder="doctor" %}
             </div>
             
-
-
-
           </div>
 
         </div>

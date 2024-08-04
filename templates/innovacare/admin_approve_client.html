@@ -1,4 +1,4 @@
-{% extends 'admin_base.html' %}
+{% extends 'innovacare/admin_base.html' %}
 {% block content %}
 {%load static%}
 
@@ -23,34 +23,32 @@
 <div class="container">
   <div class="panel panel-primary">
     <div class="panel-heading">
-      <h6 class="panel-title">Patient Wants To Admit</h6>
+      <h6 class="panel-title">Pending Clients Appointment</h6>
     </div>
     <table class="table table-hover" id="dev-table">
       <thead>
         <tr>
           <th>Name</th>
           <th>Profile Picture</th>
-          <th>Symptoms</th>
+          <th>Health Status</th>
           <th>Mobile</th>
           <th>Address</th>
           <th>Approve</th>
           <th>Reject</th>
         </tr>
       </thead>
-      {% for p in patients %}
+      {% for c in clients %}
       <tr>
-        <td> {{p.get_name}}</td>
+        <td> {{c.get_name}}</td>
         <td> <img src="{% static p.profile_pic.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
-        <td>{{p.symptoms}}</td>
-        <td>{{p.mobile}}</td>
-        <td>{{p.address}}</td>
-        <td><a class="btn btn-primary btn-xs" href="{% url 'approve-patient' p.id  %}"><span class="glyphicon glyphicon-ok"></span></a></td>
-        <td><a class="btn btn-danger btn-xs" href="{% url 'reject-patient' p.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
+        <td>{{c.symptoms}}</td>
+        <td>{{c.mobile}}</td>
+        <td>{{c.address}}</td>
+        <td><a class="btn btn-primary btn-xs" href="{% url 'approve-client' c.id  %}"><span class="glyphicon glyphicon-ok"></span></a></td>
+        <td><a class="btn btn-danger btn-xs" href="{% url 'reject-client' c.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
       </tr>
       {% endfor %}
     </table>
   </div>
-
-
 </div>
 {% endblock content %}

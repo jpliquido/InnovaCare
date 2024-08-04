@@ -46,7 +46,7 @@
         <td>{{c.mobile}}</td>
         <td>{{c.address}}</td>
         <td><a class="btn btn-primary btn-xs" href="{% url 'update-patient' c.id  %}"><span class="glyphicon glyphicon-edit"></span></a></td>
-        <td><a class="btn btn-danger btn-xs" href="{% url 'delete-patient-from-hospital' c.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
+        <td><a class="btn btn-danger btn-xs" href="{% url 'delete-client' c.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
       </tr>
       {% endfor %}
     </table>

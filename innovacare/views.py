@@ -22,14 +22,14 @@ def adminclick_view(request):
     return render(request,'innovacare/adminclick.html')
 
 
-#for showing signup/login button for doctor(by sumit)
+#for showing signup/login button for physician
 def physicianclick_view(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('innovacare/afterlogin')
     return render(request,'innovacare/physicianclick.html')
 
 
-#for showing signup/login button for patient(by sumit)
+#for showing signup/login button for client
 def clientclick_view(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('innovacare/afterlogin')
@@ -64,7 +64,7 @@ def physician_signup_view(request):
             physician = physician.save()
             my_physician_group = Group.objects.get_or_create(name='PHYSICIAN')
             my_physician_group[0].user_set.add(user)
-        return HttpResponseRedirect('physicianlogin/')
+        return HttpResponseRedirect('/physicianlogin/')
     return render(request,'innovacare/physiciansignup.html',context=mydict)
 
 
@@ -81,11 +81,11 @@ def client_signup_view(request):
             user.save()
             client = clientForm.save(commit=False)
             client.user = user
-            client.assignedPhysicianId=request.POST.get('assignedPhysicianId')
+            #client.assignedPhysicianId=request.POST.get('assignedPhysicianId')
             client = client.save()
             my_client_group = Group.objects.get_or_create(name='CLIENT')
             my_client_group[0].user_set.add(user)
-        return HttpResponseRedirect('clientlogin')
+        return HttpResponseRedirect('/clientlogin/')
     return render(request,'innovacare/clientsignup.html',context=mydict)
 
 
@@ -233,21 +233,21 @@ def admin_approve_physician_view(request):
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def approve_doctor_view(request,pk):
-    doctor=models.Doctor.objects.get(id=pk)
-    doctor.status=True
-    doctor.save()
-    return redirect(reverse('admin-approve-doctor'))
+def approve_physician_view(request,pk):
+    physician=models.Physician.objects.get(id=pk)
+    physician.status=True
+    physician.save()
+    return redirect(reverse('admin-approve-physician'))
 
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def reject_doctor_view(request,pk):
-    doctor=models.Doctor.objects.get(id=pk)
-    user=models.User.objects.get(id=doctor.user_id)
+def reject_physician_view(request,pk):
+    physician=models.Physician.objects.get(id=pk)
+    user=models.User.objects.get(id=physician.user_id)
     user.delete()
-    doctor.delete()
-    return redirect('admin-approve-doctor')
+    physician.delete()
+    return redirect('admin-approve-physician')
 
 
 
@@ -274,12 +274,12 @@ def admin_view_client_view(request):
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def delete_patient_from_hospital_view(request,pk):
-    patient=models.Patient.objects.get(id=pk)
-    user=models.User.objects.get(id=patient.user_id)
+def delete_client_view(request,pk):
+    client=models.Client.objects.get(id=pk)
+    user=models.User.objects.get(id=client.user_id)
     user.delete()
-    patient.delete()
-    return redirect('admin-view-patient')
+    client.delete()
+    return redirect('admin-view-client')
 
 
 
@@ -309,69 +309,69 @@ def update_patient_view(request,pk):
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def admin_add_patient_view(request):
-    userForm=forms.PatientUserForm()
-    patientForm=forms.PatientForm()
-    mydict={'userForm':userForm,'patientForm':patientForm}
+def admin_add_client_view(request):
+    userForm=forms.ClientUserForm()
+    clientForm=forms.ClientForm()
+    mydict={'userForm':userForm,'clientForm':clientForm}
     if request.method=='POST':
         userForm=forms.PatientUserForm(request.POST)
-        patientForm=forms.PatientForm(request.POST,request.FILES)
-        if userForm.is_valid() and patientForm.is_valid():
+        clientForm=forms.PatientForm(request.POST,request.FILES)
+        if userForm.is_valid() and clientForm.is_valid():
             user=userForm.save()
             user.set_password(user.password)
             user.save()
 
-            patient=patientForm.save(commit=False)
-            patient.user=user
-            patient.status=True
-            patient.assignedDoctorId=request.POST.get('assignedDoctorId')
+            client=clientForm.save(commit=False)
+            client.user=user
+            client.status=True
+            client.assignedPhysicianId=request.POST.get('assignedPhysicianId')
             patient.save()
 
-            my_patient_group = Group.objects.get_or_create(name='PATIENT')
-            my_patient_group[0].user_set.add(user)
+            my_client_group = Group.objects.get_or_create(name='CLIENT')
+            my_client_group[0].user_set.add(user)
 
-        return HttpResponseRedirect('admin-view-patient')
-    return render(request,'innovacare/admin_add_patient.html',context=mydict)
+        return HttpResponseRedirect('admin-view-client')
+    return render(request,'innovacare/admin_add_client.html',context=mydict)
 
 
 
 #------------------FOR APPROVING PATIENT BY ADMIN----------------------
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def admin_approve_patient_view(request):
+def admin_approve_client_view(request):
     #those whose approval are needed
-    patients=models.Patient.objects.all().filter(status=False)
-    return render(request,'innovacare/admin_approve_patient.html',{'patients':patients})
+    clients=models.Client.objects.all().filter(status=False)
+    return render(request,'innovacare/admin_approve_client.html',{'clients':clients})
 
 
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def approve_patient_view(request,pk):
-    patient=models.Patient.objects.get(id=pk)
-    patient.status=True
-    patient.save()
-    return redirect(reverse('admin-approve-patient'))
+def approve_client_view(request,pk):
+    client=models.Client.objects.get(id=pk)
+    client.status=True
+    client.save()
+    return redirect(reverse('admin-approve-client'))
 
 
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def reject_patient_view(request,pk):
-    patient=models.Patient.objects.get(id=pk)
-    user=models.User.objects.get(id=patient.user_id)
+def reject_client_view(request,pk):
+    client=models.Client.objects.get(id=pk)
+    user=models.User.objects.get(id=client.user_id)
     user.delete()
-    patient.delete()
-    return redirect('admin-approve-patient')
+    client.delete()
+    return redirect('admin-approve-client')
 
 
 
 #--------------------- FOR DISCHARGING PATIENT BY ADMIN START-------------------------
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def admin_discharge_patient_view(request):
-    patients=models.Patient.objects.all().filter(status=True)
-    return render(request,'innovacare/admin_discharge_patient.html',{'patients':patients})
+def admin_discharge_client_view(request):
+    clients=models.Client.objects.all().filter(status=True)
+    return render(request,'innovacare/admin_discharge_client.html',{'clients':clients})
 
 
 
@@ -470,14 +470,11 @@ def download_pdf_view(request,pk):
 def admin_appointment_view(request):
     return render(request,'innovacare/admin_appointment.html')
 
-
-
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_view_appointment_view(request):
     appointments=models.Appointment.objects.all().filter(status=True)
     return render(request,'innovacare/admin_view_appointment.html',{'appointments':appointments})
-
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
@@ -488,16 +485,14 @@ def admin_add_appointment_view(request):
         appointmentForm=forms.AppointmentForm(request.POST)
         if appointmentForm.is_valid():
             appointment=appointmentForm.save(commit=False)
-            appointment.doctorId=request.POST.get('doctorId')
-            appointment.patientId=request.POST.get('patientId')
-            appointment.doctorName=models.User.objects.get(id=request.POST.get('doctorId')).first_name
-            appointment.patientName=models.User.objects.get(id=request.POST.get('patientId')).first_name
+            appointment.physicianId=request.POST.get('physicianId')
+            appointment.clientId=request.POST.get('clientId')
+            appointment.physicianName=models.User.objects.get(id=request.POST.get('physicianId')).first_name
+            appointment.clientName=models.User.objects.get(id=request.POST.get('clientId')).first_name
             appointment.status=True
             appointment.save()
         return HttpResponseRedirect('admin-view-appointment')
     return render(request,'innovacare/admin_add_appointment.html',context=mydict)
-
-
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
@@ -505,8 +500,6 @@ def admin_approve_appointment_view(request):
     #those whose approval are needed
     appointments=models.Appointment.objects.all().filter(status=False)
     return render(request,'innovacare/admin_approve_appointment.html',{'appointments':appointments})
-
-
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
@@ -654,33 +647,31 @@ def delete_appointment_view(request,pk):
 #---------------------------------------------------------------------------------
 #------------------------ PATIENT RELATED VIEWS START ------------------------------
 #---------------------------------------------------------------------------------
-@login_required(login_url='patientlogin')
+@login_required(login_url='clientlogin')
 @user_passes_test(is_client)
-def patient_dashboard_view(request):
+def client_dashboard_view(request):
     client=models.Client.objects.get(user_id=request.user.id)
-    physician=models.Physician.objects.get(user_id=client.assignedDoctorId)
+    #physician=models.Physician.objects.get(user_id=client.assignedPhysicianId)
     mydict={
     'client':client,
-    'doctorName':physician.get_name,
-    'doctorMobile':physician.mobile,
-    'doctorAddress':physician.address,
-    'symptoms':client.symptoms,
-    'doctorDepartment':physician.department,
-    'admitDate':client.admitDate,
+    #'physicianName':physician.get_name,
+    #'physicianMobile':physician.mobile,
+    #'physicianAddress':physician.address,
+    #'symptoms':client.symptoms,
+    #'physicianDepartment':physician.department,
+    #'admitDate':client.admitDate,
     }
-    return render(request,'innovacare/patient_dashboard.html',context=mydict)
+    return render(request,'innovacare/client_dashboard.html',context=mydict)
 
 
 
-@login_required(login_url='patientlogin')
+@login_required(login_url='clientlogin')
 @user_passes_test(is_client)
-def patient_appointment_view(request):
-    patient=models.Patient.objects.get(user_id=request.user.id) #for profile picture of patient in sidebar
-    return render(request,'innovacare/patient_appointment.html',{'patient':patient})
+def client_appointment_view(request):
+    client=models.Client.objects.get(user_id=request.user.id) #for profile picture of patient in sidebar
+    return render(request,'innovacare/patient_appointment.html',{'client':client})
 
-
-
-@login_required(login_url='patientlogin')
+@login_required(login_url='clientlogin')
 @user_passes_test(is_client)
 def client_book_appointment_view(request):
     appointmentForm=forms.ClientAppointmentForm()
@@ -699,36 +690,30 @@ def client_book_appointment_view(request):
         return HttpResponseRedirect('patient-view-appointment')
     return render(request,'innovacare/patient_book_appointment.html',context=mydict)
 
-
-
-
-
-@login_required(login_url='patientlogin')
+@login_required(login_url='clientlogin')
 @user_passes_test(is_client)
-def patient_view_appointment_view(request):
+def client_view_appointment_view(request):
     client=models.Client.objects.get(user_id=request.user.id) #for profile picture of patient in sidebar
     appointments=models.Appointment.objects.all().filter(clientId=request.user.id)
     return render(request,'innovacare/patient_view_appointment.html',{'appointments':appointments,'client':client})
 
-
-
-@login_required(login_url='patientlogin')
+@login_required(login_url='clientlogin')
 @user_passes_test(is_client)
-def patient_discharge_view(request):
-    patient=models.Client.objects.get(user_id=request.user.id) #for profile picture of patient in sidebar
-    dischargeDetails=models.ClientDischargeDetails.objects.all().filter(clientId=patient.id).order_by('-id')[:1]
+def client_discharge_view(request):
+    client=models.Client.objects.get(user_id=request.user.id) #for profile picture of patient in sidebar
+    dischargeDetails=models.ClientDischargeDetails.objects.all().filter(clientId=client.id).order_by('-id')[:1]
     clientDict=None
     if dischargeDetails:
         patientDict ={
         'is_discharged':True,
-        'patient':patient,
-        'patientId':patient.id,
-        'patientName':patient.get_name,
+        'client':client,
+        'clientId':client.id,
+        'pclientName':client.get_name,
         'assignedDoctorName':dischargeDetails[0].assignedDoctorName,
-        'address':patient.address,
-        'mobile':patient.mobile,
-        'symptoms':patient.symptoms,
-        'admitDate':patient.admitDate,
+        'address':client.address,
+        'mobile':client.mobile,
+        'symptoms':client.symptoms,
+        'admitDate':client.admitDate,
         'releaseDate':dischargeDetails[0].releaseDate,
         'daySpent':dischargeDetails[0].daySpent,
         'medicineCost':dischargeDetails[0].medicineCost,
@@ -741,10 +726,10 @@ def patient_discharge_view(request):
     else:
         patientDict={
             'is_discharged':False,
-            'patient':patient,
+            'client':client,
             'patientId':request.user.id,
         }
-    return render(request,'innovacare/patient_discharge.html',context=patientDict)
+    return render(request,'innovacare/patient_discharge.html',context=clientDict)
 
 
 #------------------------ PATIENT RELATED VIEWS END ------------------------------

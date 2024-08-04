@@ -1,4 +1,4 @@
-{% extends 'admin_base.html' %}
+{% extends 'innovacare/admin_base.html' %}
 {% block content %}
 
 <head>
@@ -22,7 +22,7 @@
 <div class="container">
   <div class="panel panel-primary">
     <div class="panel-heading">
-      <h6 class="panel-title">Discharge Patient</h6>
+      <h6 class="panel-title">Discharge Client</h6>
     </div>
     <table class="table table-hover" id="dev-table">
       <thead>
@@ -33,12 +33,12 @@
           <th>Discharge</th>
         </tr>
       </thead>
-      {% for p in patients %}
+      {% for c in clients %}
       <tr>
-        <td> {{p.get_name}}</td>
-        <td>{{p.symptoms}}</td>
-        <td>{{p.mobile}}</td>
-        <td><a class="btn btn-primary btn-xs" href="{% url 'discharge-patient' p.id  %}"><span class="glyphicon glyphicon-log-out"></span></a></td>
+        <td> {{c.get_name}}</td>
+        <td>{{c.symptoms}}</td>
+        <td>{{c.mobile}}</td>
+        <td><a class="btn btn-primary btn-xs" href="{% url 'discharge-client' c.id  %}"><span class="glyphicon glyphicon-log-out"></span></a></td>
       </tr>
       {% endfor %}
     </table>

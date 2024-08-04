@@ -29,7 +29,7 @@ class ClientUserForm(forms.ModelForm):
 class ClientForm(forms.ModelForm):
     class Meta:
         model = Client
-        fields = ['address', 'mobile', 'health_details', 'profile_pic']
+        fields = ['address', 'mobile', 'profile_pic']
 
 
 class AdminSignupForm(forms.ModelForm):

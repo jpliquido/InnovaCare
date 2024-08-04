@@ -37,20 +37,20 @@ urlpatterns = [
     path('update-doctor/<int:pk>', views.update_doctor_view,name='update-doctor'),
     path('admin-add-physician', views.admin_add_physician_view,name='admin-add-physician'),
     path('admin-approve-physician', views.admin_approve_physician_view,name='admin-approve-physician'),
-    path('approve-doctor/<int:pk>', views.approve_doctor_view,name='approve-doctor'),
-    path('reject-doctor/<int:pk>', views.reject_doctor_view,name='reject-doctor'),
+    path('approve-physician/<int:pk>', views.approve_physician_view,name='approve-physician'),
+    path('reject-physician/<int:pk>', views.reject_physician_view,name='reject-physician'),
     path('admin-view-physician-specialisation',views.admin_view_physician_specialisation_view,name='admin-view-physician-specialisation'),
 
 
     path('admin-client', views.admin_client_view,name='admin-client'),
     path('admin-view-client/', views.admin_view_client_view,name='admin-view-client'),
-    path('delete-patient-from-hospital/<int:pk>', views.delete_patient_from_hospital_view,name='delete-patient-from-hospital'),
+    path('delete-client/<int:pk>/', views.delete_client_view,name='delete-client'),
     path('update-patient/<int:pk>', views.update_patient_view,name='update-patient'),
-    path('admin-add-patient', views.admin_add_patient_view,name='admin-add-patient'),
-    path('admin-approve-patient', views.admin_approve_patient_view,name='admin-approve-patient'),
-    path('approve-patient/<int:pk>', views.approve_patient_view,name='approve-patient'),
-    path('reject-patient/<int:pk>', views.reject_patient_view,name='reject-patient'),
-    path('admin-discharge-patient', views.admin_discharge_patient_view,name='admin-discharge-patient'),
+    path('admin-add-client/', views.admin_add_client_view,name='admin-add-client'),
+    path('admin-approve-client/', views.admin_approve_client_view,name='admin-approve-client'),
+    path('approve-client/<int:pk>', views.approve_client_view,name='approve-client'),
+    path('reject-client/<int:pk>', views.reject_client_view,name='reject-client'),
+    path('admin-discharge-client/', views.admin_discharge_client_view,name='admin-discharge-client'),
     path('discharge-patient/<int:pk>', views.discharge_patient_view,name='discharge-patient'),
     path('download-pdf/<int:pk>', views.download_pdf_view,name='download-pdf'),
 
@@ -84,10 +84,10 @@ urlpatterns +=[
 #---------FOR PATIENT RELATED URLS-------------------------------------
 urlpatterns +=[
 
-    path('patient-dashboard', views.patient_dashboard_view,name='client-dashboard'),
-    path('patient-appointment', views.patient_appointment_view,name='patient-appointment'),
-    path('patient-book-appointment', views.client_book_appointment_view,name='patient-book-appointment'),
-    path('patient-view-appointment', views.patient_view_appointment_view,name='patient-view-appointment'),
-    path('patient-discharge', views.patient_discharge_view,name='patient-discharge'),
+    path('client-dashboard', views.client_dashboard_view,name='client-dashboard'),
+    path('client-appointment', views.client_appointment_view,name='client-appointment'),
+    path('client-book-appointment', views.client_book_appointment_view,name='client-book-appointment'),
+    path('client-view-appointment', views.client_view_appointment_view,name='client-view-appointment'),
+    path('client-discharge', views.client_discharge_view,name='client-discharge'),
 
 ]
