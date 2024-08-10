@@ -1,4 +1,8 @@
-from django.shortcuts import render, redirect, reverse
+from django.shortcuts import render, redirect
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
+from django.urls import reverse
+from django.views.generic import FormView, TemplateView
+from django.views import View
 from . import forms, models
 from innovacare.forms import AdminSignupForm, PhysicianUserForm, PhysicianForm, ClientUserForm, ClientForm, ClientAppointmentForm, ContactusForm
 from django.db.models import Sum
@@ -10,64 +14,185 @@ from datetime import datetime, timedelta, date
 from django.conf import settings
 
 # Create your views here.
+"""
 def home_view(request):
-    if request.user.is_authenticated:
-        return HttpResponseRedirect('afterlogin')
-    return render(request, 'innovacare/index.html')
+    if request.user.is_authenticated: # checks if the user is authenticated
+        return HttpResponseRedirect('afterlogin') # if user is authenticated, it redirects to the 'afterlogin' URL
+    return render(request, 'innovacare/index.html') # if user is unauthenticated, it renders and returns the 'index.html' template
+"""
+class HomeView(View):
+    template_name = 'innovacare/index.html'
+    redirect_url = 'afterlogin'
 
-#for showing signup/login button for admin(by sumit)
+    def get(self, request, *args, **kwargs):
+        # Handle GET request
+        if request.user.is_authenticated:
+            return HttpResponseRedirect(self.redirect_url)
+        return render(request, self.template_name)
+
+#for showing signup/login button for admin
+"""
 def adminclick_view(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('innovacare/afterlogin')
     return render(request,'innovacare/adminclick.html')
+"""
+class AdminClickView(View):
+    template_name = 'innovacare/adminclick.html'
+    redirect_url = 'innovacare/afterlogin'
+
+    def get(self, request, *args, **kwargs):
+        # Handle GET request
+        if request.user.is_authenticated:
+            return HttpResponseRedirect(self.redirect_url)
+        return render(request, self.template_name)
 
 
 #for showing signup/login button for physician
+"""
 def physicianclick_view(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('innovacare/afterlogin')
     return render(request,'innovacare/physicianclick.html')
+"""
+class PhysicianClickView(View):
+    template_name = 'innovacare/physicianclick.html'
+    redirect_url = 'innovare/afterlogin'
+
+    def get(self, request, *args, **kwargs):
+        # Handle GET request
+        if request.user.is_authenticated:
+            return HttpResponseRedirect(self.redirect_url)
+        return render(request, self.template_name)
 
 
 #for showing signup/login button for client
+"""
 def clientclick_view(request):
     if request.user.is_authenticated:
         return HttpResponseRedirect('innovacare/afterlogin')
     return render(request,'innovacare/clientclick.html')
+"""
+class ClientClickView(View):
+    template_name = 'innovacare/clientclick.html'
+    redirect_url = 'innovacare/afterlogin'
 
+    def get(self, request, *args, **kwargs):
+        # Handle GET request
+        if request.user.is_authenticated:
+            return HttpResponseRedirect(self.redirect_url)
+        return render(request, self.template_name)
+
+"""
 def admin_signup_view(request):
+    # Initializes an instance of the AdminSignupForm with no data
     form = AdminSignupForm()
+    # Checks if the request method is POST (indicating form submission)
     if request.method=='POST':
+        # Reinitialize the form with POST data
         form = AdminSignupForm(request.POST)
+        # Check if the form data is valid
         if form.is_valid():
+            # Save the form data to create a new user instance but don't commit to the database yet
             user=form.save()
+            # Set the user's password (hashes it and saves the hash)
             user.set_password(user.password)
+            # Save the user instance to the database
             user.save()
+            # Get or create a group named 'ADMIN'
             my_admin_group = Group.objects.get_or_create(name='ADMIN')
+            # Add the newly created user to the 'ADMIN' group
             my_admin_group[0].user_set.add(user)
-            return HttpResponseRedirect('adminlogin')
+            # Redirect the user to the admin login page after successful signup
+            return HttpResponseRedirect('/adminlogin/')
+    # If the request is not a POST, or if the form is invalid, render the signup form again
     return render(request,'innovacare/adminsignup.html',{'form':form})
+"""
+class AdminSignupView(FormView):
+    template_name = 'innovacare/adminsignup.html'
+    form_class = AdminSignupForm
+    success_url = '/adminlogin/'
 
+    def form_valid(self, form):
+        # Save the form and create a new user instance
+        user = form.save(commit=False)
+        # Set the user's password
+        user.set_password(user.password)
+        # Save the user instance to the database
+        user.save()
+        # Get or create the 'ADMIN' group and add the user to it
+        my_admin_group = Group.objects.get_or_create(name='ADMIN')
+        my_admin_group[0].user_set.add(user)
+        # Redirect to the success URL after successful signup
+        return HttpResponseRedirect(self.success_url)
+
+"""
 def physician_signup_view(request):
+    # Initialize both forms with no data initially
     userForm = PhysicianUserForm()
     physicianForm = PhysicianForm()
+    # Prepare the context dictionary to be passed to the template
     mydict={'userForm':userForm,'physicianForm':physicianForm}
+    # Check if the request method is POST (indicating form submission)
     if request.method == 'POST':
+        # Reinitialize the forms with POST data and file data (for the PhysicianForm)
         userForm = PhysicianUserForm(request.POST)
         physicianForm = PhysicianForm(request.POST,request.FILES)
+        # Check if both forms are valid
         if userForm.is_valid() and physicianForm.is_valid():
+            # Save the user form to create a new user instance
             user = userForm.save()
+            # Set the user's password (hash it)
             user.set_password(user.password)
+            # Save the user instance to the database
             user.save()
+            # Save the physician form with the user linked to it
             physician = physicianForm.save(commit=False)
             physician.user = user
-            physician = physician.save()
+            physician.save()
+            # Add the new user to the 'PHYSICIAN' group
             my_physician_group = Group.objects.get_or_create(name='PHYSICIAN')
             my_physician_group[0].user_set.add(user)
+        # Redirect to the physician login page after successful signup
         return HttpResponseRedirect('/physicianlogin/')
+    # Render the signup page with the forms
     return render(request,'innovacare/physiciansignup.html',context=mydict)
+"""
+class PhysicianSignupView(View):
+    template_name = 'innovacare/physiciansignup.html'
+    user_form_class = PhysicianUserForm
+    physician_form_class = PhysicianForm
+    success_url = '/physicianlogin/'
 
+    def get(self, request, *args, **kwargs):
+        # Initialize empty forms for GET request
+        user_form = self.user_form_class()
+        physicianForm = self.physician_form_class()
+        return render(request, self.template_name, {'userForm':user_form, 'physicianForm':physicianForm})
 
+    def post(self, request, *args, **kwargs):
+        # Handle form submission with POST request
+        user_form = self.user_form_class(request.POST)
+        physicianForm = self.physician_form_class(request.POST, request.FILES)
+
+        if user_form.is_valid() and physicianForm.is_valid():
+            # Save user and set password
+            user = user_form.save()
+            user.set_password(user.password)
+            user.save()
+            # Link physician form to user and save
+            physician = physicianForm.save(commit=False)
+            physician.user = user
+            physician.save()
+            # Add user to 'PHYSICIAN' group
+            my_physician_group = Group.objects.get_or_create(name='PHYSICIAN')
+            my_physician_group[0].user_set.add(user)
+            # Redirect to the success URL
+            return redirect(self.success_url)
+        # If forms are invalid, re-render the page with errors
+        return render(request, self.template_name, {'userForm':user_form, 'physicianForm':physicianForm})
+
+"""
 def client_signup_view(request):
     userForm = ClientUserForm()
     clientForm = ClientForm()
@@ -87,33 +212,106 @@ def client_signup_view(request):
             my_client_group[0].user_set.add(user)
         return HttpResponseRedirect('/clientlogin/')
     return render(request,'innovacare/clientsignup.html',context=mydict)
+"""
+class ClientSignupView(View):
+    template_name = 'innovacare/clientsignup.html'
+    user_form_class = ClientUserForm
+    client_form_class = ClientForm
+    success_url = '/clientlogin/'
+
+    def get(self, request, *args, **kwargs):
+        # Initialize empty forms for GET request
+        user_form = self.user_form_class()
+        clientForm = self.client_form_class()
+        return render(request, self.template_name, {'userForm':user_form, 'clientForm':clientForm})
+
+    def post(self, request, *args, **kwargs):
+        # Handle form submission with POST request
+        user_form = self.user_form_class(request.POST)
+        clientForm = self.client_form_class(request.POST, request.FILES)
+
+        if user_form.is_valid() and clientForm.is_valid():
+            # Save user and set password
+            user = user_form.save()
+            user.set_password(user.password)
+            user.save()
+            # Link client form to user and save
+            client = clientForm.save(commit=False)
+            client.user = user
+            client.save()
+            # Add user to 'CLIENT' group
+            my_client_group = Group.objects.get_or_create(name='CLIENT')
+            my_client_group[0].user_set.add(user)
+            return redirect(self.success_url)
+        return render(request, self.template_name, {'userForm':user_form, 'clientForm':clientForm})
 
 
-#-----------for checking user is doctor , patient or admin(by sumit)
+#-----------for checking user is physician, client or admin
+"""
 def is_admin(user):
     return user.groups.filter(name='ADMIN').exists()
 def is_physician(user):
     return user.groups.filter(name='PHYSICIAN').exists()
 def is_client(user):
     return user.groups.filter(name='CLIENT').exists()
+"""
+class AdminRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.groups.filter(name='ADMIN').exists()
+class PhysicianRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.groups.filter(name='PHYSICIAN').exists()
+class ClientRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.groups.filter(name='CLIENT').exists()
 
 
-#---------AFTER ENTERING CREDENTIALS WE CHECK WHETHER USERNAME AND PASSWORD IS OF ADMIN,DOCTOR OR PATIENT
+#---------AFTER ENTERING CREDENTIALS WE CHECK WHETHER USERNAME AND PASSWORD IS OF ADMIN, PHYSICIAN OR CLIENT
+"""
 def afterlogin_view(request):
+    # Check if the user is an admin
     if is_admin(request.user):
         return redirect('admin-dashboard')
+    # Check if the user is a physician
     elif is_physician(request.user):
         accountapproval=models.Physician.objects.all().filter(user_id=request.user.id,status=True)
         if accountapproval:
             return redirect('physician-dashboard')
         else:
             return render(request,'innovacare/doctor_wait_for_approval.html')
+    # Check if the user is a client
     elif is_client(request.user):
         accountapproval=models.Client.objects.all().filter(user_id=request.user.id,status=True)
         if accountapproval:
             return redirect('client-dashboard')
         else:
             return render(request,'innovacare/patient_wait_for_approval.html')
+"""
+class AfterLoginView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        # Admin user
+        if user.groups.filter(name='ADMIN').exists():
+            return redirect('admin-dashboard')
+        
+        # Physician user
+        elif user.groups.filter(name='PHYSICIAN').exists():
+            accountapproval = models.Physician.objects.filter(user_id=user.id, status=True)
+            if accountapproval.exists():
+                return redirect('physician-dashboard')
+            else:
+                return render(request, 'innovacare/physician_wait_for_approval.html')
+        
+        # Client user
+        elif user.groups.filter(name='CLIENT').exists():
+            accountapproval = models.Client.objects.filter(user_id=user.id, status=True)
+            if accountapproval.exists():
+                return redirect('client-dashboard')
+            else:
+                return render(request, 'innovacare/client_wait_for_approval.html')
+        # Default fallback (if user doesn't belong to any expected group)
+        return redirect('login')
+
 
 
 #---------------------------------------------------------------------------------
@@ -161,36 +359,36 @@ def admin_view_physician_view(request):
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def delete_doctor_from_hospital_view(request,pk):
-    doctor=models.Client.objects.get(id=pk)
-    user=models.User.objects.get(id=doctor.user_id)
+def delete_physician_from_records_view(request,pk):
+    physician=models.Physician.objects.get(id=pk)
+    user=models.User.objects.get(id=physician.user_id)
     user.delete()
-    doctor.delete()
-    return redirect('admin-view-doctor')
+    physician.delete()
+    return redirect('admin-view-physician')
 
 
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def update_doctor_view(request,pk):
-    doctor=models.Doctor.objects.get(id=pk)
-    user=models.User.objects.get(id=doctor.user_id)
+def update_physician_view(request,pk):
+    physician=models.Physician.objects.get(id=pk)
+    user=models.User.objects.get(id=physician.user_id)
 
-    userForm=forms.DoctorUserForm(instance=user)
-    doctorForm=forms.DoctorForm(request.FILES,instance=doctor)
-    mydict={'userForm':userForm,'doctorForm':doctorForm}
+    userForm=forms.PhysicianUserForm(instance=user)
+    physicianForm=forms.PhysicianForm(request.FILES,instance=physician)
+    mydict={'userForm':userForm,'physicianForm':physicianForm}
     if request.method=='POST':
-        userForm=forms.DoctorUserForm(request.POST,instance=user)
-        doctorForm=forms.DoctorForm(request.POST,request.FILES,instance=doctor)
-        if userForm.is_valid() and doctorForm.is_valid():
+        userForm=forms.PhysicianUserForm(request.POST,instance=user)
+        physicianForm=forms.PhysicianForm(request.POST,request.FILES,instance=physician)
+        if userForm.is_valid() and physicianForm.is_valid():
             user=userForm.save()
             user.set_password(user.password)
             user.save()
-            doctor=doctorForm.save(commit=False)
-            doctor.status=True
-            doctor.save()
-            return redirect('admin-view-doctor')
-    return render(request,'innovacare/admin_update_doctor.html',context=mydict)
+            physician=physicianForm.save(commit=False)
+            physician.status=True
+            physician.save()
+            return redirect('admin-view-physician')
+    return render(request,'innovacare/admin_update_physician.html',context=mydict)
 
 
 

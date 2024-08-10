@@ -2,45 +2,52 @@ from django.contrib import admin
 from django.urls import path
 from innovacare import views
 from django.contrib.auth.views import LoginView,LogoutView
+from .views import HomeView, AdminClickView, PhysicianClickView, ClientClickView, AdminSignupView, PhysicianSignupView, ClientSignupView, AfterLoginView
 
 
-#-------------FOR ADMIN RELATED URLS
+#-------------FOR ADMIN RELATED URLS ------------------
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.home_view,name='home'),
+    # path('', views.home_view,name='home'),
+    path('', HomeView.as_view(), name='home'),
 
     path('aboutus/', views.aboutus_view, name='about-us'),
     path('contactus/', views.contactus_view, name='contact-us'),
 
-    path('adminclick/', views.adminclick_view, name='adminclick'),
-    path('physicianclick/', views.physicianclick_view, name='physicianclick'),
-    path('clientclick/', views.clientclick_view, name='clientclick'),
+    # path('adminclick/', views.adminclick_view, name='adminclick'),
+    path('adminclick/', AdminClickView.as_view(), name='adminclick'),
+    # path('physicianclick/', views.physicianclick_view, name='physicianclick'),
+    path('physicianclick/', PhysicianClickView.as_view(), name='physicianclick'),
 
-    path('adminsignup/', views.admin_signup_view, name='adminsignup'),
-    path('physiciansignup/', views.physician_signup_view,name='physiciansignup'),
-    path('clientsignup/', views.client_signup_view, name='clientsignup'),
+    # path('clientclick/', views.clientclick_view, name='clientclick'),
+    path('clientclick/', ClientClickView.as_view(), name='clientclick'),
+
+    # path('adminsignup/', views.admin_signup_view, name='adminsignup'),
+    path('adminsignup/', AdminSignupView.as_view(), name='adminsignup'),
+    # path('physiciansignup/', views.physician_signup_view,name='physiciansignup'),
+    path('physiciansignup/', PhysicianSignupView.as_view(), name='physiciansignup'),
+    # path('clientsignup/', views.client_signup_view, name='clientsignup'),
+    path('clientsignup/', ClientSignupView.as_view(), name='clientsignup'),
     
     path('adminlogin/', LoginView.as_view(template_name='innovacare/adminlogin.html'), name='adminlogin'),
     path('physicianlogin/', LoginView.as_view(template_name='innovacare/physicianlogin.html'), name='physicianlogin'),
     path('clientlogin/', LoginView.as_view(template_name='innovacare/clientlogin.html'), name='clientlogin'),
 
-
-    path('afterlogin/', views.afterlogin_view, name='afterlogin'),
+    # path('afterlogin/', views.afterlogin_view, name='afterlogin'),
+    path('afterlogin/', AfterLoginView.as_view(), name='afterlogin'),
     path('logout/', LogoutView.as_view(template_name='index.html'),name='logout'),
-
 
     path('admin-dashboard/', views.admin_dashboard_view, name='admin-dashboard'),
 
     path('admin-physician/', views.admin_physician_view,name='admin-physician'),
     path('admin-view-physician/', views.admin_view_physician_view,name='admin-view-physician'),
-    path('delete-doctor-from-hospital/<int:pk>', views.delete_doctor_from_hospital_view,name='delete-doctor-from-hospital'),
-    path('update-doctor/<int:pk>', views.update_doctor_view,name='update-doctor'),
+    path('delete-physician-from-records/<int:pk>', views.delete_physician_from_records_view,name='delete-physician-from-records'),
+    path('update-physician/<int:pk>', views.update_physician_view,name='update-physician'),
     path('admin-add-physician', views.admin_add_physician_view,name='admin-add-physician'),
     path('admin-approve-physician', views.admin_approve_physician_view,name='admin-approve-physician'),
     path('approve-physician/<int:pk>', views.approve_physician_view,name='approve-physician'),
     path('reject-physician/<int:pk>', views.reject_physician_view,name='reject-physician'),
     path('admin-view-physician-specialisation',views.admin_view_physician_specialisation_view,name='admin-view-physician-specialisation'),
-
 
     path('admin-client', views.admin_client_view,name='admin-client'),
     path('admin-view-client/', views.admin_view_client_view,name='admin-view-client'),
@@ -54,7 +61,6 @@ urlpatterns = [
     path('discharge-patient/<int:pk>', views.discharge_patient_view,name='discharge-patient'),
     path('download-pdf/<int:pk>', views.download_pdf_view,name='download-pdf'),
 
-
     path('admin-appointment', views.admin_appointment_view,name='admin-appointment'),
     path('admin-view-appointment', views.admin_view_appointment_view,name='admin-view-appointment'),
     path('admin-add-appointment', views.admin_add_appointment_view,name='admin-add-appointment'),
@@ -64,7 +70,7 @@ urlpatterns = [
 ]
 
 
-#---------FOR DOCTOR RELATED URLS-------------------------------------
+#---------FOR PHYSICIAN RELATED URLS-------------------------------------
 urlpatterns +=[
     path('physician-dashboard', views.physician_dashboard_view,name='physician-dashboard'),
 
@@ -79,11 +85,8 @@ urlpatterns +=[
 ]
 
 
-
-
-#---------FOR PATIENT RELATED URLS-------------------------------------
+#---------FOR CLIENT RELATED URLS-------------------------------------
 urlpatterns +=[
-
     path('client-dashboard', views.client_dashboard_view,name='client-dashboard'),
     path('client-appointment', views.client_appointment_view,name='client-appointment'),
     path('client-book-appointment', views.client_book_appointment_view,name='client-book-appointment'),
