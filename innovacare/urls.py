@@ -2,7 +2,22 @@ from django.contrib import admin
 from django.urls import path
 from innovacare import views
 from django.contrib.auth.views import LoginView,LogoutView
-from .views import HomeView, AdminClickView, PhysicianClickView, ClientClickView, AdminSignupView, PhysicianSignupView, ClientSignupView, AfterLoginView
+from .views import (
+                    AdminAddPhysicianView,
+                    AdminClickView,
+                    AdminDashboardView,
+                    AdminPhysicianView,
+                    AdminSignupView,
+                    AdminViewPhysicianView,
+                    AfterLoginView,
+                    ClientClickView,
+                    ClientSignupView,
+                    DeletePhysicianFromRecordsView,
+                    HomeView,
+                    PhysicianClickView,
+                    PhysicianSignupView,
+                    UpdatePhysicianView,
+                    )
 
 
 #-------------FOR ADMIN RELATED URLS ------------------
@@ -37,13 +52,19 @@ urlpatterns = [
     path('afterlogin/', AfterLoginView.as_view(), name='afterlogin'),
     path('logout/', LogoutView.as_view(template_name='index.html'),name='logout'),
 
-    path('admin-dashboard/', views.admin_dashboard_view, name='admin-dashboard'),
+    # path('admin-dashboard/', views.admin_dashboard_view, name='admin-dashboard'),
+    path('admin-dashboard', AdminDashboardView.as_view(), name='admin-dashboard'),
 
-    path('admin-physician/', views.admin_physician_view,name='admin-physician'),
-    path('admin-view-physician/', views.admin_view_physician_view,name='admin-view-physician'),
-    path('delete-physician-from-records/<int:pk>', views.delete_physician_from_records_view,name='delete-physician-from-records'),
-    path('update-physician/<int:pk>', views.update_physician_view,name='update-physician'),
-    path('admin-add-physician', views.admin_add_physician_view,name='admin-add-physician'),
+    # path('admin-physician/', views.admin_physician_view,name='admin-physician'),
+    path('admin-dashboard', AdminPhysicianView.as_view(), name='admin-physician'),
+    # path('admin-view-physician/', views.admin_view_physician_view,name='admin-view-physician'),
+    path('admin-view-physician/', AdminViewPhysicianView.as_view(), name='admin-view-physician'),
+    # path('delete-physician-from-records/<int:pk>', views.delete_physician_from_records_view,name='delete-physician-from-records'),
+    path('delete-physician-from-records/<int:pk>', DeletePhysicianFromRecordsView.as_view(), name='delete-physician-from-records'),
+    # path('update-physician/<int:pk>', views.update_physician_view,name='update-physician'),
+    path('update-physician/<int:pk>', UpdatePhysicianView.as_view(), name='update-physician'),
+    # path('admin-add-physician', views.admin_add_physician_view,name='admin-add-physician'),
+    path('admin-add-physician', AdminAddPhysicianView.as_view(), name='admin-add-physician'),
     path('admin-approve-physician', views.admin_approve_physician_view,name='admin-approve-physician'),
     path('approve-physician/<int:pk>', views.approve_physician_view,name='approve-physician'),
     path('reject-physician/<int:pk>', views.reject_physician_view,name='reject-physician'),

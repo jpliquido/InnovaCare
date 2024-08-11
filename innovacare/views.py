@@ -1,10 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
-from django.urls import reverse
-from django.views.generic import FormView, TemplateView
+from django.urls import reverse, reverse_lazy
+from django.views.generic import FormView, TemplateView, ListView, DeleteView, UpdateView, CreateView
 from django.views import View
 from . import forms, models
-from innovacare.forms import AdminSignupForm, PhysicianUserForm, PhysicianForm, ClientUserForm, ClientForm, ClientAppointmentForm, ContactusForm
 from django.db.models import Sum
 from django.contrib.auth.models import Group
 from django.http import HttpResponseRedirect
@@ -12,6 +11,15 @@ from django.core.mail import send_mail
 from django.contrib.auth.decorators import login_required, user_passes_test
 from datetime import datetime, timedelta, date
 from django.conf import settings
+from innovacare.forms import (
+                            AdminSignupForm, 
+                            ClientUserForm, 
+                            ClientForm, 
+                            ClientAppointmentForm, 
+                            ContactusForm,
+                            PhysicianUserForm, 
+                            PhysicianForm, 
+                            )
 
 # Create your views here.
 """
@@ -317,21 +325,26 @@ class AfterLoginView(LoginRequiredMixin, View):
 #---------------------------------------------------------------------------------
 #------------------------ ADMIN RELATED VIEWS START ------------------------------
 #---------------------------------------------------------------------------------
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_dashboard_view(request):
-    #for both table in admin dashboard
+    # Fetch all physicians and clents, ordered by descending ID (newest first)
     physicians=models.Physician.objects.all().order_by('-id')
     clients=models.Client.objects.all().order_by('-id')
-    #for three cards
+    # Count the number of approved physicians (status=True)
     physiciancount=models.Physician.objects.all().filter(status=True).count()
+    # Count the number of pending physicians (status=False)
     pendingphysiciancount=models.Physician.objects.all().filter(status=False).count()
-
+    # Count the number of approved clients (status=True)
     clientcount=models.Client.objects.all().filter(status=True).count()
+    # Count the number of pending clients (status=False)
     pendingclientcount=models.Client.objects.all().filter(status=False).count()
-
+    # Count the number of approved appointments
     appointmentcount=models.Appointment.objects.all().filter(status=True).count()
+    # Count the number of pending appointments
     pendingappointmentcount=models.Appointment.objects.all().filter(status=False).count()
+    # Prepare a context dictionary withh all the data for the template
     mydict={
     'physicians':physicians,
     'clients':clients,
@@ -342,41 +355,124 @@ def admin_dashboard_view(request):
     'appointmentcount':appointmentcount,
     'pendingappointmentcount':pendingappointmentcount,
     }
+    # Render the admin dashboard template with the context data
     return render(request,'innovacare/admin_dashboard.html',context=mydict)
+"""
+class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'innovacare/admin_dashboard.html'
+    login_url = 'adminlogin'
 
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+    
+    def get_context_data(self, **kwargs):
+        # Get the context data for the template
+        context = super().get_context_data(**kwargs)
+
+        # Fetch physicians and clients ordered by descending ID
+        context['physicians'] = models.Physician.objects.all().order_by('-id')
+        context['clients'] = models.Client.objects.all().order_by('-id')
+
+        # Get various counts for physicians, clients, and appointments
+        context['physiciancount'] = models.Physician.objects.filter(status=True).count()
+        context['pendingphysiciancount'] = models.Physician.objects.filter(status=False).count()
+
+        context['clientcount'] = models.Client.objects.filter(status=True).count()
+        context['pendingclientcount'] = models.Client.objects.filter(status=False).count()
+
+        context['appointmentcount'] = models.Appointment.objects.filter(status=True).count()
+        context['pendingappointmentcount'] = models.Appointment.objects.filter(status=False).count()
+
+        return context
 
 # this view for sidebar click on admin page
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_physician_view(request):
+    # Renders the 'admin_physician.html' template
     return render(request,'innovacare/admin_physician.html')
+"""
+class AdminPhysicianView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'innovacare/admin_physician.html'
+    login_url = 'adminlogin'
 
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_view_physician_view(request):
+    # Fetch all physicians with status = True (approved physicians)
     physicians=models.Physician.objects.all().filter(status=True)
+    # Render the 'admin_view_physician.html
     return render(request,'innovacare/admin_view_physician.html',{'physicians':physicians})
+"""
+class AdminViewPhysicianView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = models.Physician
+    template_name = 'innovacare/admin_view_physician.html'
+    context_object_name = 'physicians'
+    login_url = 'adminlogin'
 
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+    
+    def get_queryset(self):
+        # Filter the physicians to only those with status=True
+        return models.Physician.objects.filter(status=True)
+
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def delete_physician_from_records_view(request,pk):
+    # Get the physician object using the primary key (pk)
     physician=models.Physician.objects.get(id=pk)
+    # Get the associated user object using the physician's user_id
     user=models.User.objects.get(id=physician.user_id)
+    # Delete the user and physician objects from the database
     user.delete()
     physician.delete()
+    # Redirect to the 'admin-view-physician' page after deletion
     return redirect('admin-view-physician')
+"""
 
+class DeletePhysicianFromRecordsView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = models.Physician
+    template_name = 'innovacare/admin_confirm_physician_record_delete.html' # Optional: Add a confirmation template
+    context_object_name = 'physician'
+    success_url = reverse_lazy('admin-view-physician')
+    login_url = 'adminlogin'
 
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+    def delete(self, request, *args, **kwargs):
+        # Get the physician object using the primary key (pk) from kwargs
+        physician = self.get_object()
+        # Get the associated user object using the physician's user_id
+        user = models.User.objects.get(id=physician.user_id)
+        # Delete the user and physician objects
+        user.delete()
+        physician.delete()
+        return redirect(self.success_url)
 
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def update_physician_view(request,pk):
+    # Fetch the physician and related user by primary key (pk)
     physician=models.Physician.objects.get(id=pk)
     user=models.User.objects.get(id=physician.user_id)
-
+    # Initialize forms with existing data
     userForm=forms.PhysicianUserForm(instance=user)
     physicianForm=forms.PhysicianForm(request.FILES,instance=physician)
     mydict={'userForm':userForm,'physicianForm':physicianForm}
+
+    # If the request is a POST, updatge the physician and user with the submitted data
     if request.method=='POST':
         userForm=forms.PhysicianUserForm(request.POST,instance=user)
         physicianForm=forms.PhysicianForm(request.POST,request.FILES,instance=physician)
@@ -388,37 +484,134 @@ def update_physician_view(request,pk):
             physician.status=True
             physician.save()
             return redirect('admin-view-physician')
+    # Render the form for updating physician details
     return render(request,'innovacare/admin_update_physician.html',context=mydict)
+"""
 
+class UpdatePhysicianView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = models.Physician
+    form_class = PhysicianForm
+    template_name = 'innovacare/admin_update_physician.html'
+    context_object_name = 'physician'
+    success_url = reverse_lazy('admin-view-physician')
+    login_url = 'adminlogin'
 
+    # Method to get the form for the related User instance
+    def get_user_form(self):
+        # Get the User instance associated with the Physician being updated
+        user = models.User.objects.get(id=self.get_object().user_id)
+        # If the request is POST, return a form bound to the POST data
+        if self.request.method == 'POST':
+            return PhysicianUserForm(self.request.POST, instance=user)
+        else:
+            # Otherwise, return a form bound to the existing User instance
+            return PhysicianUserForm(instance=user)
+    
+    # Override the get_context_data method to add additional context
+    def get_context_data(self, **kwargs):
+        # Get the default context data from the parent class
+        context = super().get_context_data(**kwargs)
+        # Add the User form to the context dictionary
+        context['userForm'] = self.get_user_form()
+        # Return the updated context dictionary
+        return context
+    
+    # Override the form_valid method to save both the User and Physician forms
+    def form_valid(self, form):
+        # Get the User form
+        user_form = self.get_user_form()
+        # Check if the User form is valid
+        if user_form.is_valid():
+            # Save the User form and update the password
+            user = user_form.save()
+            user.set_password(user.password)
+            user.save()
+        
+        # Save the Physician form with the status set to True
+        physician = form.save(commit=False)
+        physician.status = True
+        physician.save()
 
+        # Call the parent class's form_valid method to handle the redirection
+        return super().form_valid(form)
 
+    # Override the test_func method to restrict access to Admin users only
+    def test_func(self):
+        # Check if user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_add_physician_view(request):
+    # Initialize empty forms for creating a new Physician and User
     userForm=forms.PhysicianUserForm()
     physicianForm=forms.PhysicianForm()
     mydict={'userForm':userForm,'physicianForm':physicianForm}
-    if request.method=='POST':
+    if request.method=='POST': # If the form is submitted
+        # Bind the submitted data to the forms
         userForm=forms.PhysicianUserForm(request.POST)
         physicianForm=forms.PhysicianForm(request.POST, request.FILES)
-        if userForm.is_valid() and physicianForm.is_valid():
+        if userForm.is_valid() and physicianForm.is_valid(): # Validate the forms
+            # Save the User form data to create a new User
             user=userForm.save()
-            user.set_password(user.password)
+            user.set_password(user.password) # Set the password
             user.save()
 
+            # Save the Physician form data but don't commit yet
             physician=physicianForm.save(commit=False)
-            physician.user=user
-            physician.status=True
-            physician.save()
+            physician.user=user # Associate the user with the physician
+            physician.status=True # Set the physician status to active
+            physician.save() # Save the Physician to the database
 
+            # Add the user to the 'PHYSICIAN' group
             my_physician_group = Group.objects.get_or_create(name='PHYSICIAN')
             my_physician_group[0].user_set.add(user)
 
-        return HttpResponseRedirect('admin-view-physician')
+        return HttpResponseRedirect('admin-view-physician') # Redirect after saving
     return render(request,'innovacare/admin_add_physician.html',context=mydict)
+"""
+class AdminAddPhysicianView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    # Define the model to create and the form class
+    model = models.Physician
+    form_class = PhysicianForm
+    template_name = 'innovacare/admin_add_physician.html'
+    success_url = reverse_lazy('admin-view-physician')
+    login_url = 'adminlogin'
 
+    def get_context_data(self, **kwargs):
+        # Get the existing context data from the parent class
+        context = super().get_context_data(**kwargs)
+        # Add the PhysicianUserForm to the context, either with POST data or as unbound form
+        context['userForm'] = PhysicianUserForm(self.request.POST or None)
+        # Return the updaed context
+        return context
+    
+    def form_valid(self, form):
+        # Handle saving of both the User and Physician forms
+        # Bind the POST data to the PhysicianUserForm
+        userForm = PhysicianUserForm(self.request.POST)
+        if userForm.is_valid(): # Validate the user form
+            # Save the User form, hash the password, and save it again
+            user = userForm.save()
+            user.set_password(user.password)
+            user.save()
 
+            # Save the Physician form, linking it to the newly created user
+            physician = form.save(commit=False)
+            physician.user = user
+            physician.status = True # Set the physician status to active
+            physician.save() # Save the physician instance
+
+            # Add the new user to the 'PHYSICIAN' group
+            my_physician_group = Group.objects.get_or_create(name='PHYSICIAN')
+            my_physician_group[0].user_set.add(user)
+        # Call the parent class's form_valid method to handle redirection
+        return super().form_valid(form)
+    
+    def test_func(self):
+        # Restrict access to users in the 'ADMIN' group
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
 
 @login_required(login_url='adminlogin')
