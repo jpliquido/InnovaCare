@@ -1,3 +1,4 @@
+from django.db.models.query import QuerySet
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.urls import reverse, reverse_lazy
@@ -613,66 +614,196 @@ class AdminAddPhysicianView(LoginRequiredMixin, UserPassesTestMixin, CreateView)
         # Restrict access to users in the 'ADMIN' group
         return self.request.user.groups.filter(name='ADMIN').exists()
 
-
-@login_required(login_url='adminlogin')
-@user_passes_test(is_admin)
+"""
 def admin_approve_physician_view(request):
-    #those whose approval are needed
+    # Retrieve all physiciabns whose status is False, meaning they need approval
     physicians=models.Physician.objects.all().filter(status=False)
+    # Render the template with the list of physicians needing approval
     return render(request,'innovacare/admin_approve_physician.html',{'physicians':physicians})
+"""
 
+class AdminApprovePhysicianView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = models.Physician
+    template_name = 'innovacare/admin_approve_physician.html'
+    context_object_name = 'physicians'
+    login_url = 'adminlogin'
 
+    def get_queryset(self):
+        # Return the queryset for physicians needing approval
+        return models.Physician.objects.all.filter(status=False)
+    
+    def test_func(self):
+        # Restrict access to users in the 'ADMIN' group
+        return self.request.user.groups.filter('ADMIN').exists()
+
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def approve_physician_view(request,pk):
+    # Retrieve the physician object by its primary key (id)
     physician=models.Physician.objects.get(id=pk)
+    # Set the physician's status to True, meaning they are approved
     physician.status=True
+    # Save the changes to the database
     physician.save()
+    # Redirect the user to the admin approval page
     return redirect(reverse('admin-approve-physician'))
+"""
 
+class ApprovePhysicianView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = models.Physician
+    # Fields to update, in this case, only the 'status' field
+    fields = ['status']
+    # URL to redirect to after successful approval
+    success_url = reverse_lazy('admin-approve-physician')
+    login_url = 'adminlogin'
 
+    def form_valid(self, form):
+        # Set the physician's status to True (approved)
+        form.instance.status = True
+        # Save the form an redirect to the success URL
+        return super.form_valid(form)
+    
+    def test_func(self):
+        # Restrict access to users in the 'ADMIN' group
+        return self.request.user.groups.filter(name='ADMIN').exists()
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def reject_physician_view(request,pk):
+    # Retrieve the physician object by its primary key (id)
     physician=models.Physician.objects.get(id=pk)
+    # Retrieve the user objects associate with this physician
     user=models.User.objects.get(id=physician.user_id)
+    # Delete the user objects associate with this physician
     user.delete()
+    # Delete the physician object (removes the physician record)
     physician.delete()
+    # Redirect to the admin approval page
     return redirect('admin-approve-physician')
+"""
 
+class RejectPhysicianView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = models.Physician
+    # URL to redirect to after successful rejection
+    success_url = 'admin-approve-physician'
+    login_url = 'adminlogin'
 
-
+    def delete(self, request, *args, **kwargs):
+        # Retrieve the physician object by its primary key (id)
+        physician = self.get_object()
+        # Retrieve the associate user object
+        user = models.User.objects.get(id=physician.user_id)
+        # Delete the user object (removes the user fro the system)
+        user.delete()
+        # Delete the physician object (removes the physician record)
+        return super().delete(request, *args, **kwargs)
+    
+    def test_func(self):
+        # Retrieve access to users in the 'ADMIN' group
+        return self.request.user.groups.filter(name='ADMIN').exists()
+    
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_view_physician_specialisation_view(request):
+    # Retrieve all physicians with a status of True (approved physicians)
     physicians=models.Physician.objects.all().filter(status=True)
+    # Render the template with the list of physicians
     return render(request,'innovacare/admin_view_physician_specialisation.html',{'physicians':physicians})
+"""
 
+class AdminViewPhysicianSpecialisationView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = models.Physician
+    template_name = 'innovacare/admin_view_physician_specialisation.html'
+    context_object_name = 'physicians'
+    login_url = 'adminlogin'
 
+    def get_queryset(self):
+        # Filter the physicians to only those with status=True
+        return models.Physician.objects.all.filter(status=True)
+    
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_client_view(request):
+    # Render the template for the admin client page
     return render(request,'innovacare/admin_client.html')
+"""
 
+class AdminClientView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    # Define the template to render for the admin client page
+    template_name = 'innovacare/admin_client.html'
+    login_url = 'adminlogin'
+
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_view_client_view(request):
+    # Retrieve all clients with a status of True (approved clients)
     clients=models.Client.objects.all().filter(status=True)
+    # Render the template with the list of clients
     return render(request,'innovacare/admin_view_client.html',{'clients':clients})
+"""
+class AdminViewClientView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = models.Client
+    template_name = 'innovacare/admin_view_client.html'
+    context_object_name = 'clients'
+    login_url = 'adminlogin'
 
+    def get_queryset(self):
+        # Filter the clients to only those with status=True (approved clients)
+        return models.Client.objects.filter(status=True)
+    
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
-
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def delete_client_view(request,pk):
-    client=models.Client.objects.get(id=pk)
+    # Retrieve the client object by primary key (pk)
+    client = models.Client.objects.get(id=pk)
+    # Retrieve the associate user object
     user=models.User.objects.get(id=client.user_id)
+    # Delete the user object (removes the client's associated user account)
     user.delete()
+    # Delete the client object
     client.delete()
+    # Redirect to the 'admin-view-client' page after deletion
     return redirect('admin-view-client')
+"""
 
+class DeleteClientView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = models.Client
+    template_name = 'innovacare/admin_confirm_client_delete.html'
+    success_url = reverse_lazy('admin-view-client')
+    login_url = 'adminlogin'
 
+    def delete(self, request, *args, **kwargs):
+        # Retrieve the client object  by primary key (pk)
+        client = self.get_object()
+        # Retrieve the associated user object
+        user = models.User.objects.get(id=client.user_id)
+        # Delete the user object (removes the client's associated user account)
+        user.delete()
+        # Delete the client object
+        client.delete()
+        # Redirect to the success URL after deletion
+        return redirect(self.success_url)
+
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
