@@ -24,6 +24,7 @@ from .views import (
                     AdminClientView,
                     AdminViewClientView,
                     DeleteClientView,
+                    UpdateClientView,
                     )
 
 
@@ -87,7 +88,8 @@ urlpatterns = [
     path('admin-view-client', AdminViewClientView.as_view(), name='admin-view-client'),
     # path('delete-client/<int:pk>/', views.delete_client_view,name='delete-client'),
     path('delete-client/<int:pk>/', DeleteClientView.as_view(), name='delete-client'),
-    path('update-patient/<int:pk>', views.update_patient_view,name='update-patient'),
+    # path('update-patient/<int:pk>', views.update_patient_view,name='update-patient'),
+    path('update-client-view/<int:pk>', UpdateClientView.as_view(), name='update-client'),
     path('admin-add-client/', views.admin_add_client_view,name='admin-add-client'),
     path('admin-approve-client/', views.admin_approve_client_view,name='admin-approve-client'),
     path('approve-client/<int:pk>', views.approve_client_view,name='approve-client'),

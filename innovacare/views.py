@@ -1,4 +1,5 @@
 from django.db.models.query import QuerySet
+from django.forms.models import BaseModelForm
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.urls import reverse, reverse_lazy
@@ -585,7 +586,7 @@ class AdminAddPhysicianView(LoginRequiredMixin, UserPassesTestMixin, CreateView)
         context = super().get_context_data(**kwargs)
         # Add the PhysicianUserForm to the context, either with POST data or as unbound form
         context['userForm'] = PhysicianUserForm(self.request.POST or None)
-        # Return the updaed context
+        # Return the updated context
         return context
     
     def form_valid(self, form):
@@ -805,56 +806,159 @@ class DeleteClientView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         # Check if the user is an admin
         return self.request.user.groups.filter(name='ADMIN').exists()
 
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def update_patient_view(request,pk):
-    patient=models.Patient.objects.get(id=pk)
-    user=models.User.objects.get(id=patient.user_id)
+def update_client_view(request,pk):
+    # Retrieve the client object by primary key (pk)
+    client = models.Client.objects.get(id=pk)
+    # Retrieve the associated user object
+    user = models.User.objects.get(id=client.user_id)
+    # Initialize forms with existing user and client data
+    userForm = forms.ClientUserForm(instance=user)
+    clientForm = forms.ClientForm(request.FILES,instance=client)
+    mydict={'userForm':userForm,'clientForm':clientForm}
 
-    userForm=forms.PatientUserForm(instance=user)
-    patientForm=forms.PatientForm(request.FILES,instance=patient)
-    mydict={'userForm':userForm,'patientForm':patientForm}
     if request.method=='POST':
-        userForm=forms.PatientUserForm(request.POST,instance=user)
-        patientForm=forms.PatientForm(request.POST,request.FILES,instance=patient)
-        if userForm.is_valid() and patientForm.is_valid():
-            user=userForm.save()
+        # Populate the forms with the submitted data
+        userForm=forms.ClientUserForm(request.POST,instance=user)
+        clientForm=forms.ClientForm(request.POST,request.FILES,instance=client)
+        # Check if both forms are valid
+        if userForm.is_valid() and clientForm.is_valid():
+            # Save the user form and update the password
+            user = userForm.save()
             user.set_password(user.password)
             user.save()
-            patient=patientForm.save(commit=False)
-            patient.status=True
-            patient.assignedDoctorId=request.POST.get('assignedDoctorId')
-            patient.save()
-            return redirect('admin-view-patient')
-    return render(request,'innovacare/admin_update_patient.html',context=mydict)
+            # Save the client form, set the status to True, and assign a physician
+            client = clientForm.save(commit=False)
+            client.status=True
+            client.assignedPhysicianId=request.POST.get('assignedPhysicianId')
+            client.save()
+            # Redirect to the 'admin-view-client' page after updating
+            return redirect('admin-view-client')
+    # Render the update client template with the form data
+    return render(request,'innovacare/admin_update_client.html',context=mydict)
+"""
+class UpdateClientView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = models.Client
+    form_class = ClientForm
+    template_name = 'innovacare/admin_update_client.html'
+    context_object_name = 'client'
+    success_url = reverse_lazy('admin-view-client')
+    login_url = 'adminlogin'
+
+    def get_user_form(self):
+        # Get the related user form with instance data
+        user = models.User.objects.get(id=self.get_object().user_id)
+        if self.request.method == 'POST':
+            return ClientUserForm(self.request.POST, instance=user)
+        else:
+            return ClientUserForm(instance = user)
+    
+    def get_context_data(self, **kwargs):
+        # Add the user form to the context data
+        context = super().get_context_data(**kwargs)
+        context['userForm'] = self.get_user_form()
+        return context
+    
+    def form_valid(self, form):
+        # Save the user form
+        user_form = self.get_user_form()  
+        if user_form.is_valid():
+            user = user_form.save()
+            user.set_password(user.password)
+            user.save()
+        # Save the client form and set additional fields
+        client = form.save(commit=False)
+        client.status = True
+        client.save()
+
+        return super().form_valid()
+
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_add_client_view(request):
-    userForm=forms.ClientUserForm()
-    clientForm=forms.ClientForm()
+    # Initialize the forms with empty data
+    userForm = forms.ClientUserForm()
+    clientForm = forms.ClientForm()
     mydict={'userForm':userForm,'clientForm':clientForm}
-    if request.method=='POST':
-        userForm=forms.PatientUserForm(request.POST)
-        clientForm=forms.PatientForm(request.POST,request.FILES)
+    if request.method == 'POST':
+        # Populate the forms with the submitted data
+        userForm = forms.ClientUserForm(request.POST)
+        clientForm=forms.ClientForm(request.POST,request.FILES)
         if userForm.is_valid() and clientForm.is_valid():
+            # Save the user form and update the password
             user=userForm.save()
             user.set_password(user.password)
             user.save()
-
-            client=clientForm.save(commit=False)
+            # Save the client form and link it to the user
+            client = clientForm.save(commit=False)
             client.user=user
             client.status=True
             client.assignedPhysicianId=request.POST.get('assignedPhysicianId')
-            patient.save()
+            client.save()
 
+            # Add the user to the 'CLIENT' group
             my_client_group = Group.objects.get_or_create(name='CLIENT')
             my_client_group[0].user_set.add(user)
 
         return HttpResponseRedirect('admin-view-client')
+    # Return the add client template with the form data
     return render(request,'innovacare/admin_add_client.html',context=mydict)
 
+class AdminAddClientView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    # Define the model to create and the form class
+    model = models.Client
+    form_class = ClientForm
+    template_name = 'innovacare/admin_add_client.html'
+    success_url = reverse_lazy('admin-view-client')
+    login_url = 'adminlogin'
+
+    def get_user_form(self):
+        # Method to get the related User form
+        if self.request.method == 'POST':
+            return ClientUserForm(self.request.POST)
+        return ClientUserForm()
+
+    def get_context_data(self, **kwargs):
+        # Get the existing context data from the parent class
+        context = super().get_context_data(**kwargs)
+        # Add the ClientUserForm to the context, either with POST data or as unbound form
+        context['userForm'] = self.get_user_form()  # ClientUserForm(self.request.POST or None)
+        # Return the updated context
+        return context
+    
+    def form_valid(self, form):
+        # Handle saving of both the User and Client forms
+        # Bind the POST data to the ClientUserForm
+        user_form = self.get_user_form() # ClientUserForm(self.request.POST)
+        if user_form.is_valid(): # Validate the user form
+            # Save the User form, hash the password, and save it again
+            user = user_form.save()
+            user.set_password(user.password)
+            user.save()
+
+            # Save the Client form, linking it to the newly created user
+            client = form.save(commit=False)
+            client.user = user
+            client.status = True # Set the client status to active
+            client.assignedPhysicianId = self.request.POST.get('assignedPhysicianId')
+            client.save() # Save the client instance
+
+            # Add the new user to the 'CLIENT' group
+            my_client_group = Group.objects.get_or_create(name='CLIENT')
+            my_client_group[0].user_set.add(user)
+        # Call the parent class's form_valid method to handle redirection
+        return super().form_valid(form)
+
+    def test_fuc(self):
+        # Restrict access to users in the 'ADMIN' group
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
 
 #------------------FOR APPROVING PATIENT BY ADMIN----------------------
