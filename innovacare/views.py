@@ -3,7 +3,7 @@ from django.forms.models import BaseModelForm
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.urls import reverse, reverse_lazy
-from django.views.generic import FormView, TemplateView, ListView, DeleteView, UpdateView, CreateView
+from django.views.generic import FormView, TemplateView, ListView, DeleteView, UpdateView, CreateView, DetailView
 from django.views import View
 from . import forms, models
 from django.db.models import Sum
@@ -879,7 +879,7 @@ class UpdateClientView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         # Check if the user is an admin
         return self.request.user.groups.filter(name='ADMIN').exists()
 
-
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_add_client_view(request):
@@ -910,6 +910,7 @@ def admin_add_client_view(request):
         return HttpResponseRedirect('admin-view-client')
     # Return the add client template with the form data
     return render(request,'innovacare/admin_add_client.html',context=mydict)
+"""
 
 class AdminAddClientView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     # Define the model to create and the form class
@@ -961,26 +962,55 @@ class AdminAddClientView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return self.request.user.groups.filter(name='ADMIN').exists()
 
 
-#------------------FOR APPROVING PATIENT BY ADMIN----------------------
+#------------------FOR APPROVING CLIENT BY ADMIN----------------------
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_approve_client_view(request):
-    #those whose approval are needed
+    # Fetch clients that need approval (status=False)
     clients=models.Client.objects.all().filter(status=False)
+    # Render the 'admin_approve_client.html' template with the clients needing approval
     return render(request,'innovacare/admin_approve_client.html',{'clients':clients})
+"""
 
+class AdminApproveClientView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = models.Client # Model to query for the list view
+    template_name = 'innovacare/admin_approve_client.html' # Template to render
+    context_object_name = 'clients' # Name of the context variable to pass the queryset
+    login_url = 'adminlogin' # Login URL if the user is not authenticated
 
+    def get_queryset(self):
+        # Override get_queryset to filter clients needing approval
+        return models.Client.objects.filter(status=False)
 
+    def test_func(self):
+        # Ensure that only admins can access this view
+        return self.request.user.groups.filter(name='ADMIN').exists()
+
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def approve_client_view(request,pk):
-    client=models.Client.objects.get(id=pk)
-    client.status=True
-    client.save()
-    return redirect(reverse('admin-approve-client'))
+    client=models.Client.objects.get(id=pk) # Retrieve the Client object with the given primary key (pk)
+    client.status=True # Set the status of the client to True (approve the client)
+    client.save() # Save the changes to the database
+    return redirect(reverse('admin-approve-client')) # Redirect to the 'admin-approve-client' URL
+"""
 
+class ApproveClientView(LoginRequiredMixin, UserPassesTestMixin, View):
+    login_url = 'adminlogin'
 
+    def post(self, request, pk, *args, **kwargs):
+        client = models.Client.objects.get(id=pk) # Retrieve the Client object with the given primary key (pk)
+        client.status = True # Set the status of the client to True (approve the client)
+        client.save() # Save the changes to the database
+        return redirect(reverse('admin-approve-client')) # Redirect to the 'admin-approve-client' URL
+    
+    def test_func(self):
+        # Check if ther user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def reject_client_view(request,pk):
@@ -990,14 +1020,81 @@ def reject_client_view(request,pk):
     client.delete()
     return redirect('admin-approve-client')
 
+class RejectClientView(LoginRequiredMixin, UserPassesTestMixin, View):
+    login_url = 'adminlogin'
 
+    def post(self, request, pk, *args, **kwargs):
+        client = models.Client.objects.get(id=pk) # Retrieve the Client object with the given primary key (pk)
+        user = models.User.objects.get(id=client.user_id) # Retrieve the User object associated with the Client
+        client.delete(); # Delete the Client object
+        user.delete() # Delete the User object
+        return redirect(reverse('admin-approve-client')) # Redirect to the 'admin-approve-client' URL
+    
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
-#--------------------- FOR DISCHARGING PATIENT BY ADMIN START-------------------------
+# Adding confirmation page
+def reject_client_view(request, pk):
+    client = models.Client.objects.get(id=pk)
+    if request.method == 'POST':
+        return redirect('reject-client', pk=pk) # Redirect to the reject view if confirmed
+    return render(request, 'innovacare/admin_confirm_reject_client.html', {'client':client})
+"""
+class ConfirmRejectClientView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = models.Client
+    template_name = 'innovacare/admin_confirm_reject_client.html'
+    context_object_name = 'client'
+    login_url = 'adminlogin'
+
+    def post(self, request, *args, **kwargs):
+        # Redirect to the reject view when the form is submitted
+        return redirect('confirm-reject-client', pk=self.get_object().id)
+
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+
+class RejectClientView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = models.Client
+    template_name = 'innovacare/admin_approve_client.html'
+    context_object_name = 'client'
+    login_url = 'adminlogin'
+    success_url = reverse_lazy('admin-approve-client')
+
+    def delete(self, request, pk, *args, **kwargs):
+        client = self.get_object()
+        user = models.User.objects.get(id=client.user_id) # Retrieve the User object associated with the Client
+        client.delete(); # Delete the Client object
+        user.delete() # Delete the User object
+        return super().delete(request, *args, **kwargs) # Redirect to the 'admin-approve-client' URL
+    
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+
+#--------------------- FOR DISCHARGING CLIENT BY ADMIN START-------------------------
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_discharge_client_view(request):
-    clients=models.Client.objects.all().filter(status=True)
-    return render(request,'innovacare/admin_discharge_client.html',{'clients':clients})
+    clients=models.Client.objects.all().filter(status=True) # Retrieves all clients from the database whose status is 'True'
+    return render(request,'innovacare/admin_discharge_client.html',{'clients':clients}) # Render the template. passing the list of active clients as context
+"""
+class AdminDischargeClientView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = models.Client
+    template_name = 'innovacare/admin_discharge_client.html'
+    context_object_name = 'clients'
+    login_url = 'adminlogin'
+
+    def get_queryset(self):
+        # Override the default queryset to return only clients with status=True
+        clients = models.Client.objects.filter(status=True)
+        return clients
+
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
 
 
