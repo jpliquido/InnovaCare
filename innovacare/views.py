@@ -1,6 +1,6 @@
 from django.db.models.query import QuerySet
 from django.forms.models import BaseModelForm
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.urls import reverse, reverse_lazy
 from django.views.generic import FormView, TemplateView, ListView, DeleteView, UpdateView, CreateView, DetailView
@@ -12,6 +12,7 @@ from django.http import HttpResponseRedirect
 from django.core.mail import send_mail
 from django.contrib.auth.decorators import login_required, user_passes_test
 from datetime import datetime, timedelta, date
+from django.utils.timezone import now
 from django.conf import settings
 from innovacare.forms import (
                             AdminSignupForm, 
@@ -21,6 +22,7 @@ from innovacare.forms import (
                             ContactusForm,
                             PhysicianUserForm, 
                             PhysicianForm, 
+                            AppointmentForm,
                             )
 
 # Create your views here.
@@ -1097,53 +1099,132 @@ class AdminDischargeClientView(LoginRequiredMixin, UserPassesTestMixin, ListView
         return self.request.user.groups.filter(name='ADMIN').exists()
 
 
-
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
-def discharge_patient_view(request,pk):
-    patient=models.Patient.objects.get(id=pk)
-    days=(date.today()-patient.admitDate) #2 days, 0:00:00
-    assignedDoctor=models.User.objects.all().filter(id=patient.assignedDoctorId)
-    d=days.days # only how many day that is 2
-    patientDict={
-        'patientId':pk,
-        'name':patient.get_name,
-        'mobile':patient.mobile,
-        'address':patient.address,
-        'symptoms':patient.symptoms,
-        'admitDate':patient.admitDate,
+def discharge_client_view(request,pk):
+    client = models.Client.objects.get(id=pk) # Retrieves the Client object based on the primary key (pk)
+    days = (date.today()-client.admitDate) # Calculates the number of days the client has been admitted
+    assignedPhysician = models.User.objects.all().filter(id=client.assignedPhysicianId) # Retrieves the assigned Physician's User object
+    d=days.days # Extracts the number of days as an integer
+    clientDict={ # Creates a dictionary with client details to pass to the tempalte
+        'clientId':pk,
+        'name':client.get_name,
+        'mobile':client.mobile,
+        'address':client.address,
+        'symptoms':client.symptoms,
+        'admitDate':client.admitDate,
         'todayDate':date.today(),
         'day':d,
-        'assignedDoctorName':assignedDoctor[0].first_name,
+        'assignedPhysicianName':assignedPhysician[0].first_name,
     }
-    if request.method == 'POST':
-        feeDict ={
+    if request.method == 'POST': # If the request method is POST, meaning the form has been submitted
+        feeDict ={ # Creates a dictionary with the billing details
             'roomCharge':int(request.POST['roomCharge'])*int(d),
-            'doctorFee':request.POST['doctorFee'],
+            'physicianFee':request.POST['physicianFee'],
             'medicineCost' : request.POST['medicineCost'],
             'OtherCharge' : request.POST['OtherCharge'],
-            'total':(int(request.POST['roomCharge'])*int(d))+int(request.POST['doctorFee'])+int(request.POST['medicineCost'])+int(request.POST['OtherCharge'])
+            'total':(int(request.POST['roomCharge'])*int(d))+int(request.POST['physicianFee'])+int(request.POST['medicineCost'])+int(request.POST['OtherCharge'])
         }
-        patientDict.update(feeDict)
-        #for updating to database patientDischargeDetails (pDD)
-        pDD=models.PatientDischargeDetails()
-        pDD.patientId=pk
-        pDD.patientName=patient.get_name
-        pDD.assignedDoctorName=assignedDoctor[0].first_name
-        pDD.address=patient.address
-        pDD.mobile=patient.mobile
-        pDD.symptoms=patient.symptoms
-        pDD.admitDate=patient.admitDate
+        clientDict.update(feeDict) # Merges the fee details with the client details
+        # for updating to database clientDischargeDetails (pDD)
+        pDD=models.ClientDischargeDetails()
+        pDD.clientId=pk
+        pDD.clientName=client.get_name
+        pDD.assignedPhysicianName=assignedPhysician[0].first_name
+        pDD.address=client.address
+        pDD.mobile=client.mobile
+        pDD.symptoms=client.symptoms
+        pDD.admitDate=client.admitDate
         pDD.releaseDate=date.today()
         pDD.daySpent=int(d)
         pDD.medicineCost=int(request.POST['medicineCost'])
         pDD.roomCharge=int(request.POST['roomCharge'])*int(d)
-        pDD.doctorFee=int(request.POST['doctorFee'])
+        pDD.physicianFee=int(request.POST['physicianFee'])
         pDD.OtherCharge=int(request.POST['OtherCharge'])
-        pDD.total=(int(request.POST['roomCharge'])*int(d))+int(request.POST['doctorFee'])+int(request.POST['medicineCost'])+int(request.POST['OtherCharge'])
+        pDD.total=(int(request.POST['roomCharge'])*int(d))+int(request.POST['physicianFee'])+int(request.POST['medicineCost'])+int(request.POST['OtherCharge'])
         pDD.save()
-        return render(request,'patient_final_bill.html',context=patientDict)
-    return render(request,'innovacare/patient_generate_bill.html',context=patientDict)
+        return render(request,'patient_final_bill.html',context=clientDict) # Renders the final bill with the context
+    return render(request,'innovacare/patient_generate_bill.html',context=clientDict) # Renders the bill generation page with the context
+"""
+class DischargeClientView(LoginRequiredMixin, UserPassesTestMixin, View):
+    login_url = 'adminlogin'
+
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+    
+    def get(self, request, pk, *args, **kwargs):
+        # Retrieve client and calculate days spent
+        client = models.Client.objects.get(id=pk)
+        days = (now().date() - client.admitDate).days
+        assignedPhysician = models.User.filter(id=client.assignedPhysicianId).first()
+
+        # Create context dictionary with client details
+        clientDict = {
+            'clientId':pk,
+            'name':client.get_name,
+            'mobile':client.mobile,
+            'address':client.address,
+            'symptoms':client.symptoms,
+            'admitDate':client.admitDate,
+            'todayDate':now().date(),
+            'day': days,
+            'assignPhysicianName':assignedPhysician.first_name,
+        }
+        return render(request, 'innovacare/patient_generate_bill.html', context=clientDict)
+    
+    def post(self, request, pk, *args, **kwargs):
+        # Retrieve client and calculate days spent
+        client = models.Client.objects.get(id=pk)
+        days = (now().date() - client.admitDate).days
+        assignedPhysician = models.User.objects.filter(id=client.assignedPhysicianId).first()
+
+        # Create context dictionary with client details
+        clientDict = {
+            'clientId':pk,
+            'name':client.get_name,
+            'mobile':client.mobile,
+            'address':client.address,
+            'symptoms':client.symptoms,
+            'admitDate':client.admitDate,
+            'todayDate':now().date(),
+            'day': days,
+            'assignPhysicianName':assignedPhysician.first_name,
+        }
+
+        # Create fee dictionary from the posted data
+        feeDict = {
+            'roomCharge': int(request.POST['roomCharge']) * days,
+            'physicianFee': request.POST['physicianFee'],
+            'medicineCost': request.POST['medicinCost'],
+            'OtherCharge': request.POST['OtherCharge'],
+            'total': (int(request.POST['roomCharge']) * days) + int(request.POST['physicianFee']) + int(request.POST['medicineCost']) + int(request.POST['OtherCharge'])
+        }
+
+        clientDict.update(feeDict) # Update the clientDct with fee details
+
+        # Create and save the ClientDischargeDetails object
+        pDD = models.ClientDischargeDetails(
+            clientId=pk,
+            clientName=client.get_name,
+            assignedPhysicianName=assignedPhysician.first_name,
+            address=client.address,
+            mobile=client.mobile,
+            symptons=client.symptoms,
+            admitDate=client.admitDate,
+            releaseDate=now().date(),
+            daySpent=days,
+            medicineCost=int(request.POST['medicineCost']),
+            roomCharge=int(request.POST['roomCharge']) * days,
+            physicianFee=int(request.POST['physicianFee']),
+            OtherCharge=int(request.POST['OtherCharge']),
+            total=feeDict['total']
+        )
+        pDD.save() # Save the discharge details
+
+        return render(request, 'innovacare/patient_generate_bill.html', context=clientDict)
+
 
 
 
@@ -1154,23 +1235,53 @@ from django.template.loader import get_template
 from django.template import Context
 from django.http import HttpResponse
 
-
+"""
 def render_to_pdf(template_src, context_dict):
+    # 1. Fetch the template specified by 'template_src'
     template = get_template(template_src)
+    # 2. Render the template with the provided context dictionary.
     html  = template.render(context_dict)
+    # 3. Create an in-memory buffer to hold the PDF data
     result = io.BytesIO()
+    # 4. Use 'pisa.pisaDocument' to convert the HTML to a PDF, writing the output to 'result'
     pdf = pisa.pisaDocument(io.BytesIO(html.encode("ISO-8859-1")), result)
+    # 5. Check if there were any errors during PDF generation
     if not pdf.err:
+        # 6. If no errors, return an HTTP respons with the PDF content and the appropriate content type
         return HttpResponse(result.getvalue(), content_type='application/pdf')
-    return
+    # 7. If there were errors, return 'None' (indicating PDF generation failed)
+    return None
+"""
 
+"""
+class RenderToPDFView(View):
+    template_name = None # This should be overridden by the view that inherits from this
 
+    def get_context_data(self, **kwargs):
+        # Override this method to provide the context for the template
+        return 
+    
+    def render_to_pdf(self, template_src, context_dict):
+        template = get_template(template_src)
+        html = template.render(context_dict)
+        result = io.BytesIO()
+        pdf = pisa.pisaDocument(io.BytesIO(html.encode("ISO-8859-1")), result)
+        if not pdf.err:
+            return HttpResponse(result.getvalue(), context_type='application/pdf')
+        return None
 
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(**kwargs)
+        return self.render_to_pdf(self.template_name, context)
+"""
+"""
 def download_pdf_view(request,pk):
-    dischargeDetails=models.PatientDischargeDetails.objects.all().filter(patientId=pk).order_by('-id')[:1]
-    dict={
-        'patientName':dischargeDetails[0].patientName,
-        'assignedDoctorName':dischargeDetails[0].assignedDoctorName,
+    # Fetch the most recent ClientDischargeDetails object for the client with the given primary key
+    dischargeDetails=models.ClientDischargeDetails.objects.all().filter(clientId=pk).order_by('-id')[:1]
+    # 2. Create a dictionary with client details to pass as context to the PDF rendering function
+    context_dict={
+        'clientName':dischargeDetails[0].clientName,
+        'assignedPhysicianName':dischargeDetails[0].assignedPhysicianName,
         'address':dischargeDetails[0].address,
         'mobile':dischargeDetails[0].mobile,
         'symptoms':dischargeDetails[0].symptoms,
@@ -1179,50 +1290,175 @@ def download_pdf_view(request,pk):
         'daySpent':dischargeDetails[0].daySpent,
         'medicineCost':dischargeDetails[0].medicineCost,
         'roomCharge':dischargeDetails[0].roomCharge,
-        'doctorFee':dischargeDetails[0].doctorFee,
+        'physicianFee':dischargeDetails[0].physicianFee,
         'OtherCharge':dischargeDetails[0].OtherCharge,
         'total':dischargeDetails[0].total,
     }
-    return render_to_pdf('innovacare/download_bill.html',dict)
+    # 3. Render the context to a PDF using the template 'innovacare/download_bill.html'
+    return render_to_pdf('innovacare/download_bill.html',context_dict)
+"""
+class DownloadPDFView(LoginRequiredMixin, UserPassesTestMixin, DetailView):
+    model = models.ClientDischargeDetails
+    template_name = 'innovacare/download_bill.html'
+    context_object_name = 'dischargeDetails'
 
+    def test_func(self):
+        # Check if the user is an admin
+        return self.request.user.groups.filter(name='ADMIN').exists()
+    
+    def get_object(self, queryset=None):
+        # Fetch the most recent ClientDischargeDetails for the given client (pk)
+        pk = self.kwargs.get('pk')
+        return get_object_or_404(models.ClientDischargeDetails.objects.filter(clientId=pk).order_by('-id'))
+    
+    def render_to_pdf(template_src, context_dict):
+        template = get_template(template_src)
+        html = template.render(context_dict)
+        result = io.BytesIO()
+        pdf = pisa.pisaDocument(io.BytesIO(html.encode("ISO-8859-1")), result)
+        if not pdf.err:
+            return HttpResponse(result.getvalue(), content_type='application/pdf')
+        return None
+    
+    def render_to_response(self, context, **response_kwargs):
+        # 1. Extract discharge details from the context
+        dischargeDetails = context['dischargeDetails']
+        context_dict={
+        'clientName':dischargeDetails[0].clientName,
+        'assignedPhysicianName':dischargeDetails[0].assignedPhysicianName,
+        'address':dischargeDetails[0].address,
+        'mobile':dischargeDetails[0].mobile,
+        'symptoms':dischargeDetails[0].symptoms,
+        'admitDate':dischargeDetails[0].admitDate,
+        'releaseDate':dischargeDetails[0].releaseDate,
+        'daySpent':dischargeDetails[0].daySpent,
+        'medicineCost':dischargeDetails[0].medicineCost,
+        'roomCharge':dischargeDetails[0].roomCharge,
+        'physicianFee':dischargeDetails[0].physicianFee,
+        'OtherCharge':dischargeDetails[0].OtherCharge,
+        'total':dischargeDetails[0].total,
+        }
+        # 2. Render the context to a PDF using the template
+        pdf = self.render_to_pdf(self.template_name, context_dict)
+        # 3. Return the PDF as a response
+        return HttpResponse(pdf, content_type='application/pdf')
 
 
 #-----------------APPOINTMENT START--------------------------------------------------------------------
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_appointment_view(request):
     return render(request,'innovacare/admin_appointment.html')
+"""
+class AdminAppointmentView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'innovacare/admin_appointment.html' # Specify the template to be rendered
+    login_url = 'adminlogin' # URL to redirect to if the user is not logged in
 
+    def test_func(self): # Define a custom test function to check if the user is admin
+        # Check if the current user belongs to the 'ADMIN' group
+        return self.request.user.groups.filter(name='ADMIN').exists()
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_view_appointment_view(request):
+    # Retrieve all approved appointments from the database
     appointments=models.Appointment.objects.all().filter(status=True)
+    # Render the template with the appointments data
     return render(request,'innovacare/admin_view_appointment.html',{'appointments':appointments})
+"""
+class AdminViewAppointmentView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = models.Appointment # Specify the model to retrieve data from
+    template_name = 'innovacare/admin_view_appointment.html' # Specify the template to render
+    context_object_name = 'appointments' # Define the context variable name to use in the template
+    login_url = 'adminlogin' # Redirect URL if the user is logged in
 
+    def get_queryset(self):
+        appointments = models.Appointment.objects.filter(status=True)
+        return appointments
+
+    def test_func(self):
+        # Check if the user is an admin; allow access if true
+        return self.request.user.groups.filter(name='ADMIN').exists()
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_add_appointment_view(request):
+    # Initialize an empty AppointmentForm to be used in the template
     appointmentForm=forms.AppointmentForm()
+    # Create a context dictionary to pass the form to the template
     mydict={'appointmentForm':appointmentForm,}
+    # Check if the request method is POST (indicating form submission)
     if request.method=='POST':
+        # Re-initialize the AppointmentForm with the POST data
         appointmentForm=forms.AppointmentForm(request.POST)
+        # Check if the form data is valid
         if appointmentForm.is_valid():
+            # Create an appointment object without saving it to th database yet
             appointment=appointmentForm.save(commit=False)
+
+            # Manually set additional fields that are not handled by the form
             appointment.physicianId=request.POST.get('physicianId')
             appointment.clientId=request.POST.get('clientId')
             appointment.physicianName=models.User.objects.get(id=request.POST.get('physicianId')).first_name
             appointment.clientName=models.User.objects.get(id=request.POST.get('clientId')).first_name
-            appointment.status=True
+            appointment.status=True # Set the appointment status to True (approved)
+            # Save th appointment to the database
             appointment.save()
+        # Redirect to the 'admin-view-appointment' URL after saving the appointment
         return HttpResponseRedirect('admin-view-appointment')
+    # Render the template with the context containing the form
     return render(request,'innovacare/admin_add_appointment.html',context=mydict)
+"""
+class AdminAddAppointmentView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    model = models.Appointment # Specify the model to be used
+    form_class = AppointmentForm # Specify the form class to be used
+    template_name = 'innovacare/admin_add_appointment.html' # Specify the template to render
+    success_url = reverse_lazy('admin-view-appointment') # Redirect to this URL on successful form submission
 
+    def test_func(self):
+        # Check if the user is an admin; allow access if true
+        return self.request.user.groups.filter(name='ADMIN').exists()
+    
+    def form_valid(self, form):
+        # Create the appointment object without saving it to the database yet
+        appointment = form.save(commit=False)
+
+        # Manually set additional fields that are not handled by the form
+        appointment.physicianId = self.request.POST.get('physicianId')
+        appointment.clientId = self.request.POST.get('clientId')
+        appointment.physicianName = models.User.objects.get(id=self.request.POST.get('physicianId')).first_name
+        appointment.clientName = models.User.objects.get(id=self.request.POST.get('clientId')).first_name
+        appointment.status = True # Set the appointment status to True (approved)
+
+        # Save the appointment to the database
+        appointment.save()
+
+        # redirect to the success URL after saving the appointment
+        return HttpResponseRedirect(self.get_success_url)
+"""
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)
 def admin_approve_appointment_view(request):
-    #those whose approval are needed
+    # Retrieve all Appointment objects that have a status of False (pending approval)
     appointments=models.Appointment.objects.all().filter(status=False)
+    # render the template, passing in the retrieved appointments
     return render(request,'innovacare/admin_approve_appointment.html',{'appointments':appointments})
+"""
+class AdminApproveAppointmentView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = models.Appointment # Specify the model to be used
+    template_name = 'innovacare/admin_approve_appointment.html' # Specify the template to render
+    context_object_name = 'appointments' # Set the name of the context variable to be used in the template
+    login_url = 'adminlogin' # Redirect to this URL if the user is logged in
+
+    def get_queryset(self):
+        # Return the queryset of Appointment objects where status is False (pending approval)
+        appointments = models.Appointment.objects.filter(status=False)
+        return appointments
+
+    def test_func(self):
+        # check if the user is an admin; allow access if true
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
 @login_required(login_url='adminlogin')
 @user_passes_test(is_admin)

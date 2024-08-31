@@ -31,6 +31,11 @@ from .views import (
                     RejectClientView,
                     ConfirmRejectClientView,
                     AdminDischargeClientView,
+                    DischargeClientView,
+                    AdminAppointmentView,
+                    AdminViewAppointmentView,
+                    AdminAddAppointmentView,
+                    AdminApproveAppointmentView,
                     )
 
 
@@ -107,13 +112,18 @@ urlpatterns = [
     path('reject-client/<int:pk>', RejectClientView.as_view(), name='reject-client'),
     # path('admin-discharge-client/', views.admin_discharge_client_view,name='admin-discharge-client'),
     path('admin-discharge-client/', AdminDischargeClientView.as_view(), name='admin-discharge-client'),
-    path('discharge-patient/<int:pk>', views.discharge_patient_view,name='discharge-patient'),
-    path('download-pdf/<int:pk>', views.download_pdf_view,name='download-pdf'),
+    # path('discharge-patient/<int:pk>', views.discharge_patient_view,name='discharge-patient'),
+    path('discharge-client/<int:pk>', DischargeClientView.as_view(), name='discharge-client'),
+    # path('download-pdf/<int:pk>', views.download_pdf_view,name='download-pdf'),
 
-    path('admin-appointment', views.admin_appointment_view,name='admin-appointment'),
-    path('admin-view-appointment', views.admin_view_appointment_view,name='admin-view-appointment'),
-    path('admin-add-appointment', views.admin_add_appointment_view,name='admin-add-appointment'),
-    path('admin-approve-appointment', views.admin_approve_appointment_view,name='admin-approve-appointment'),
+    # path('admin-appointment', views.admin_appointment_view,name='admin-appointment'),
+    path('admin-appointment', AdminAppointmentView.as_view(), name='admin-appointment'),
+    # path('admin-view-appointment', views.admin_view_appointment_view,name='admin-view-appointment'),
+    path('admin-view-appointment', AdminViewAppointmentView.as_view(), name='admin-view-appointment'),
+    # path('admin-add-appointment', views.admin_add_appointment_view,name='admin-add-appointment'),
+    path('admin-add-appointment', AdminAddAppointmentView.as_view(), name='admin-add-appointment'),
+    # path('admin-approve-appointment', views.admin_approve_appointment_view,name='admin-approve-appointment'),
+    path('admin-approve-appointment', AdminApproveAppointmentView.as_view(), name='admin-approve-appointment'),
     path('approve-appointment/<int:pk>', views.approve_appointment_view,name='approve-appointment'),
     path('reject-appointment/<int:pk>', views.reject_appointment_view,name='reject-appointment'),
 ]
