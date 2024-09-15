@@ -1,5 +1,6 @@
 from django.db.models.query import QuerySet
 from django.forms.models import BaseModelForm
+from django.http.request import HttpRequest as HttpRequest
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.urls import reverse, reverse_lazy
@@ -32,15 +33,34 @@ def home_view(request):
         return HttpResponseRedirect('afterlogin') # if user is authenticated, it redirects to the 'afterlogin' URL
     return render(request, 'innovacare/index.html') # if user is unauthenticated, it renders and returns the 'index.html' template
 """
+"""
 class HomeView(View):
+    # Specify the template for the home page
     template_name = 'innovacare/index.html'
+    # URL to redirect to after login
     redirect_url = 'afterlogin'
 
+    # Handle GET requests
     def get(self, request, *args, **kwargs):
-        # Handle GET request
+        # If the user is authenticated, redirect to 'afterlogin' page
         if request.user.is_authenticated:
             return HttpResponseRedirect(self.redirect_url)
+        # Otherwise, render the home page template
         return render(request, self.template_name)
+"""  
+class HomeView(TemplateView):
+    # Specify the template to be used for the viekw
+    template_name = 'innovacare/index.html'
+    # URL to redirect if the user is authenticated
+    redirect_url = 'afterlogin'
+
+    # Override the dispatch method to check for use authentication before rendering the template
+    def dispatch(self, request, *args, **kwargs):
+        # If the user is authenticated, redirect them to the 'afterlogin' page
+        if request.user.is_authenticated:
+            return HttpResponseRedirect(self.redirect_url)
+        # Other, continue with the normal dispatch process (render the template)
+        return super().dispatch(request, *args, **kwargs)
 
 #for showing signup/login button for admin
 """
