@@ -46,6 +46,14 @@ from .views import (
                     PhysicianViewDischargeClientView,
                     PhysicianAppointmentView,
                     PhysicianViewAppointmentView,
+                    PhysicianDeleteAppointmentView,
+                    DeleteAppointmentView,
+                    ClientDashboardView,
+                    ClientAppointmentView,
+                    ClientBookAppointmentView,
+                    ClientViewAppointmentView,
+                    ClientDischargeView,
+                    AboutUsView,
                     )
 
 
@@ -55,7 +63,9 @@ urlpatterns = [
     # path('', views.home_view,name='home'),
     path('', HomeView.as_view(), name='home'),
 
-    path('aboutus/', views.aboutus_view, name='about-us'),
+    # path('aboutus/', views.aboutus_view, name='about-us'),
+    path('aboutus/', AboutUsView.as_view(), name='about-us'),
+
     path('contactus/', views.contactus_view, name='contact-us'),
 
     # path('adminclick/', views.adminclick_view, name='adminclick'),
@@ -85,7 +95,7 @@ urlpatterns = [
     path('admin-dashboard', AdminDashboardView.as_view(), name='admin-dashboard'),
 
     # path('admin-physician/', views.admin_physician_view,name='admin-physician'),
-    path('admin-dashboard', AdminPhysicianView.as_view(), name='admin-physician'),
+    path('admin-physician', AdminPhysicianView.as_view(), name='admin-physician'),
     # path('admin-view-physician/', views.admin_view_physician_view,name='admin-view-physician'),
     path('admin-view-physician/', AdminViewPhysicianView.as_view(), name='admin-view-physician'),
     # path('delete-physician-from-records/<int:pk>', views.delete_physician_from_records_view,name='delete-physician-from-records'),
@@ -157,17 +167,24 @@ urlpatterns +=[
     path('physician-appointment', PhysicianAppointmentView.as_view(), name='physician-appointment'),
     # path('physician-view-appointment', views.physician_view_appointment_view,name='physician-view-appointment'),
     path('physician-view-appointment', PhysicianViewAppointmentView.as_view(), name='physician-view-appointment'),
-    path('physician-delete-appointment',views.physician_delete_appointment_view,name='physician-delete-appointment'),
-    path('delete-appointment/<int:pk>', views.delete_appointment_view,name='delete-appointment'),
+    # path('physician-delete-appointment',views.physician_delete_appointment_view,name='physician-delete-appointment'),
+    path('physician-delete-appointment', PhysicianDeleteAppointmentView.as_view(), name='physician-delete-appointment'),
+    # path('delete-appointment/<int:pk>', views.delete_appointment_view,name='delete-appointment'),
+    path('delete-appointment/<int:pk>', DeleteAppointmentView.as_view(), name='delete-appointment'),
 ]
 
 
 #---------FOR CLIENT RELATED URLS-------------------------------------
 urlpatterns +=[
-    path('client-dashboard', views.client_dashboard_view,name='client-dashboard'),
-    path('client-appointment', views.client_appointment_view,name='client-appointment'),
-    path('client-book-appointment', views.client_book_appointment_view,name='client-book-appointment'),
-    path('client-view-appointment', views.client_view_appointment_view,name='client-view-appointment'),
-    path('client-discharge', views.client_discharge_view,name='client-discharge'),
+    # path('client-dashboard', views.client_dashboard_view,name='client-dashboard'),
+    path('client-dashboard', ClientDashboardView.as_view(), name='client-dashboard'),
+    # path('client-appointment', views.client_appointment_view,name='client-appointment'),
+    path('client-appointment', ClientAppointmentView.as_view(), name='client-appointment'),
+    # path('client-book-appointment', views.client_book_appointment_view,name='client-book-appointment'),
+    path('client-book-appointment', ClientBookAppointmentView.as_view(), name='client-book-appointment'),
+    # path('client-view-appointment', views.client_view_appointment_view,name='client-view-appointment'),
+    path('client-view-appointment', ClientViewAppointmentView.as_view(), name='client-view-appointment'),
+    # path('client-discharge', views.client_discharge_view,name='client-discharge'),
+    path('client-discharge-view', ClientDischargeView.as_view(), name='client-discharge'),
 
 ]

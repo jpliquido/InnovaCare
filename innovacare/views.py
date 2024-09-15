@@ -633,11 +633,11 @@ class AdminApprovePhysicianView(LoginRequiredMixin, UserPassesTestMixin, ListVie
 
     def get_queryset(self):
         # Return the queryset for physicians needing approval
-        return models.Physician.objects.all.filter(status=False)
+        return models.Physician.objects.all().filter(status=False)
     
     def test_func(self):
         # Restrict access to users in the 'ADMIN' group
-        return self.request.user.groups.filter('ADMIN').exists()
+        return self.request.user.groups.filter(name='ADMIN').exists()
 
 """
 @login_required(login_url='adminlogin')
@@ -724,7 +724,7 @@ class AdminViewPhysicianSpecialisationView(LoginRequiredMixin, UserPassesTestMix
 
     def get_queryset(self):
         # Filter the physicians to only those with status=True
-        return models.Physician.objects.all.filter(status=True)
+        return models.Physician.objects.all().filter(status=True)
     
     def test_func(self):
         # Check if the user is an admin
@@ -1791,77 +1791,130 @@ class PhysicianViewAppointmentView(LoginRequiredMixin, UserPassesTestMixin, Temp
         # Return the updagted context with the physician details and appointments
         return context
 
-
+"""
 @login_required(login_url='physicianlogin')
 @user_passes_test(is_physician)
 def physician_delete_appointment_view(request):
+    # Retrieve the physician's details based on the logged-in user (used for the sidebar profile picture)
     physician=models.Physician.objects.get(user_id=request.user.id) #for profile picture of doctor in sidebar
+    # Retrieve all appointments forthe current physician thatr have an active status (status=True)
     appointments=models.Appointment.objects.all().filter(status=True,physicianId=request.user.id)
+    # Create a list to store clients IDs associated with theappointments
     clientid=[]
+    # Loop through each appointment and append the clientId to the list
     for a in appointments:
         clientid.append(a.clientId)
+    # retrieve clients whose IDs are in the clientid list and have an active status
     clients=models.Client.objects.all().filter(status=True,user_id__in=clientid)
+    # Zip the appointments and clients together so they can be displayed in the template side by side
     appointments=zip(appointments,clients)
+    # Render the template, passing the appointments and physician details
     return render(request,'innovacare/physician_delete_appointment.html',{'appointments':appointments,'physician':physician})
-
+"""
 class PhysicianDeleteAppointmentView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    template_name = 'innovacare/physician_delete_appointment.html'
-    login_url = 'physicianlogin'
-
+    template_name = 'innovacare/physician_delete_appointment.html' # Specify the template to render
+    login_url = 'physicianlogin' # URL to redirect to if the user is not logged in 
+    # Method to check if the user is a physician
     def test_func(self):
         return self.request.user.groups.filter(name='PHYSICIAN').exists()
-    
+    # Overide get_context_data to add context for the templates
     def get_context_data(self, **kwargs):
+        # Get the default context data
         context = super().get_context_data(**kwargs)
+        # Retrieve the current physician's details based on the logged-in user
         physician = models.Physician.objects.get(user_id=self.request.user.id)
+        # Retrieve all appointments for the logged-in physician that have an active status
         appointments = models.Appointment.objects.all().filter(status=True, physicianId=self.request.user.id)
-        clientid = []
-        for a in appointments:
-            clientid.append(a.clientId)
+        # Create a list to hold client IDs associated with the appointments
+        clientid = [a.clientId for a in appointments]
+        # Retrieve clients whose IDs are in the clientid listand have an active status
         clients = models.Client.objects.all().filter(status=True, user_id__in=clientid)
+        # Zip the appointments and client together for displaying them in the template
         appointments = zip(appointments, clients)
         context['physician'] = physician
         context['appointments'] = appointments
         context['clients'] = clients
+        # Return the updated context
         return context
 
 
-
+"""
 @login_required(login_url='physicianlogin')
 @user_passes_test(is_physician)
 def delete_appointment_view(request,pk):
+    # Get the appointment based on the provided primary key (pk) and delete it
     appointment=models.Appointment.objects.get(id=pk)
     appointment.delete()
-    doctor=models.Physician.objects.get(user_id=request.user.id) #for profile picture of doctor in sidebar
-    appointments=models.Appointment.objects.all().filter(status=True,doctorId=request.user.id)
-    patientid=[]
-    for a in appointments:
-        patientid.append(a.patientId)
-    patients=models.Client.objects.all().filter(status=True,user_id__in=patientid)
-    appointments=zip(appointments,patients)
-    return render(request,'innovacare/doctor_delete_appointment.html',{'appointments':appointments,'doctor':doctor})
+    # Retrieve the physician's details based on the logged-in user (used for the sidebar profile)
+    physician=models.Physician.objects.get(user_id=request.user.id) #for profile picture of doctor in sidebar
+    # Retrieve all appointments with an active status for the logged-in physician
+    appointments=models.Appointment.objects.all().filter(status=True,physicianId=request.user.id)
+    clientid = [a.clientId for a in appointments]
+    # Retrieive clients whose IDs are in the patientid list and have an active status
+    clients=models.Client.objects.all().filter(status=True,user_id__in=clientid)
+    # Zip the appointments and clients together so they can be displayed in the template side profile
+    appointments=zip(appointments,clients)
+    # Render the template with the list of appointments and the physician details
+    return render(request,'innovacare/doctor_delete_appointment.html',{'appointments':appointments,'physician':physician})
+"""
+class DeleteAppointmentView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = models.Appointment
+    template_name = 'innovacare/doctor_delete_appointment.html'
+    success_url = reverse_lazy('physician_delete_appointment') # Redirect to a sucess URL after deletion
+    login_url = 'physicianlogin' # URL to redirect to if the user is not logged in
+
+    # Ensure that only physicians can access this view
+    def test_func(self):
+        return self.request.user.groups.filter(name='PHYSICIAN').exists()
+    
+    # Override get_object to retrieve the specific appointment using the primary key (pk)
+    def get_object(self, queryset=None):
+        # Get the appointment by ID (pk), or return a 404 if not found
+        appointment = get_object_or_404(models.Appointment, id=self.kwargs['pk'])
+        return appointment
+    
+    # Override get_context_data to add additional context for the template
+    def get_context_data(self, **kwargs):
+        # Get the default context data
+        context = super().get_context_data(**kwargs)
+
+        # Retrieve the physician's details based on the logged-in user
+        context['physician'] = models.Physician.objects.get(user_id=self.request.user.id)
+        # Retrieve all appointments for the logged-in physician with an active status
+        appointments = models.Appointment.objects.filter(status=True, physicianId=self.request.user.id)
+        # Get the list of client IDs associated with the physician's appointments
+        clientid = [a.clientId for a in appointments]
+        # Retrieve all clients whose user IDs are in the clientid list and have an active status
+        context['clients'] = models.Client.objects.filter(status=True, user_id__in=clientid)
+        # Zip the appointments and clients together to display them in the template side by side
+        context['appointments'] = zip(appointments, context['clients'])
+        # Return the updated context
+        return context
+
+#---------------------------------------------------------------------------------
+#------------------------ PHYSICIAN RELATED VIEWS END ------------------------------
+#---------------------------------------------------------------------------------
+
+
+
 
 
 
 #---------------------------------------------------------------------------------
-#------------------------ DOCTOR RELATED VIEWS END ------------------------------
+#------------------------ CLIENT RELATED VIEWS START ------------------------------
 #---------------------------------------------------------------------------------
-
-
-
-
-
-
-#---------------------------------------------------------------------------------
-#------------------------ PATIENT RELATED VIEWS START ------------------------------
-#---------------------------------------------------------------------------------
+"""
 @login_required(login_url='clientlogin')
 @user_passes_test(is_client)
 def client_dashboard_view(request):
+    # Retrieive the Client instance associated with the logged-in user
     client=models.Client.objects.get(user_id=request.user.id)
+    # Retrieive the assigned physician's information if needed (currently commented out)
     #physician=models.Physician.objects.get(user_id=client.assignedPhysicianId)
+    # Create a context dictionary to pass client and physician details to the template
     mydict={
     'client':client,
+    # The physician's details (currently commented out) could be added to the context if needed
     #'physicianName':physician.get_name,
     #'physicianMobile':physician.mobile,
     #'physicianAddress':physician.address,
@@ -1869,71 +1922,157 @@ def client_dashboard_view(request):
     #'physicianDepartment':physician.department,
     #'admitDate':client.admitDate,
     }
+    # Render the template with the context dictionary
     return render(request,'innovacare/client_dashboard.html',context=mydict)
-
+"""
 class ClientDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'innovacare/client_dashboard.html'
     login_url = 'clientlogin'
 
+    # Ensure that only clients can access this view
     def test_func(self):
         # Check if the user is belong to the Client group, allow access if True
         return self.request.user.groups.filter(name='CLIENT').exists()
     
+    # Override the get_context_data method to pass data to the template
     def get_context_data(self, **kwargs):
+        # Get the default context data (if any)
         context = super().get_context_data(**kwargs)
+        # Retrieive the Client instance associated with the logged-in user
         client = models.Client.objects.get(user_id=self.request.user.id)
+        # Add the client information to the context
         context['client'] = client
+        # If needed, you could also retrieive the assigned physician's information and add it to the context (currently commented out)
+        # physician = models.Physician.objects.get(user_id=client.assignedPhysicianId)
+        # context.update({
+        #'physicianName':physician.get_name,
+        #'physicianMobile':physician.mobile,
+        #'physicianAddress':physician.address,
+        #'symptoms':client.symptoms,
+        #'physicianDepartment':physician.department,
+        #'admitDate':client.admitDate,})
+        # Return the updated context to the template
         return context
 
-
-
+"""
 @login_required(login_url='clientlogin')
 @user_passes_test(is_client)
 def client_appointment_view(request):
+    # Retrieive the Client instance associated with the logged-in user (used to display the profile)
     client=models.Client.objects.get(user_id=request.user.id) #for profile picture of patient in sidebar
+    # Render the template and pass the client object to thr context
     return render(request,'innovacare/client_appointment.html',{'client':client})
-
+"""
 class ClientAppointmentView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     template_name = 'innovacare/client_appointment.html'
     login_url = 'clientlogin'
 
+    # Ensure that only clients can access this view
     def test_func(self):
         # Check if the user is belong to the CLIENT group, allow access if True
         return self.request.user.groups.filter(name='CLIENT').exists()
     
+    # Override the get_context_data method to pass data to the template
     def get_context_data(self, **kwargs):
+        # Get the default context data (if any)
         context = super().get_context_data(**kwargs)
+        # Retrieive the Client instance associated with the logged-in user (for the profile)
         client = models.Client.objects.get(user_id=self.request.user.id)
+        # Add the client information to the context
         context['client'] = client
+        # Return the updated context
         return context
 
+"""
 @login_required(login_url='clientlogin')
 @user_passes_test(is_client)
 def client_book_appointment_view(request):
+    # Initialize the appointment form for the client
     appointmentForm=forms.ClientAppointmentForm()
+    # Retrieve the Client instance associated with the logged-in user (used to display the profile picture)
     client=models.Client.objects.get(user_id=request.user.id) #for profile picture of patient in sidebar
+    # Create a dictionary to pass the form and client information to the template
     mydict={'appointmentForm':appointmentForm,'client':client}
+    # If the form is submitted via a POST request
     if request.method=='POST':
+        # Re-initialize the form with the submitted data
         appointmentForm=forms.ClientAppointmentForm(request.POST)
+        # Check if the form data is valid
         if appointmentForm.is_valid():
+            # Save the form data to create an appointment object, but don't commit to the database yet
             appointment=appointmentForm.save(commit=False)
-            appointment.physicianId=request.POST.get('doctorId')
+            # Set the physician ID based on the submitted form data
+            appointment.physicianId=request.POST.get('physicianId')
+            # Set the client ID to the logged-in user's ID
             appointment.clientId=request.user.id #----user can choose any patient but only their info will be stored
+            # Set the physician's name based on the selected physician in the form
             appointment.physicianName=models.User.objects.get(id=request.POST.get('physicianId')).first_name
+            # Set the client's name based on the logged-in user's name
             appointment.clientName=request.user.first_name #----user can choose any patient but only their info will be stored
+            # Set the appointment status to False (pending approval)
             appointment.status=False
+            # Save the appointment to the database
             appointment.save()
+        # Redirect to the 'patient-view-appointment' page after form submission
         return HttpResponseRedirect('patient-view-appointment')
+    # Render the template and pass the form and client information
     return render(request,'innovacare/patient_book_appointment.html',context=mydict)
+"""
+class ClientBookAppointmentView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+    # Specify the form class to be used
+    form_class = ClientAppointmentForm
+    # Set the template to be rendered
+    template_name = 'innovacare/patient_book_appointment.html'
+    # Set the login URL for clientsif not logged in
+    login_url = 'clientlogin'
 
+    # Override the test_func method to ensure only clients can access this view
+    def test_func(self):
+        return self.request.user.groups.filter(name='CLIENT').exists()
+    
+    # Override the get_context_data method to pass additional context to the template
+    def get_context_data(self, **kwargs):
+        # Get the default context data (if any)
+        context = super().get_context_data(**kwargs)
+
+        # Retrieive the client instance associated with the logged-in user for the profile
+        context['client'] = models.Client.objects.get(user_id=self.request.user.id)
+        # Return the updated context to the template
+        return context
+    
+    # Handle form submission for booking an appointment (POST request)
+    def form_valid(self, form):
+        # Save the form data but don't commit to the database yet
+        appointment = form.save(commit=False)
+        # Set the physician ID from the POST data
+        appointment.physicianId = self.request.POST.get('physicianId')
+        # Set the client ID to the logged-in client's ID
+        appointment.clientId = self.request.user.id
+        # Set the physician's name based on the selected physician
+        appointment.physicianName = models.User.objects.get(id=self.request.POST.get('physicianId')).first_name
+        # Set the client's name to the logged-in user's first name
+        appointment.clientName = self.request.user.first_name
+        # Set the appointment status to False (pending)
+        appointment.status = False
+        # Save the appointment to the database
+        appointment.save()
+        # Redirect to the 'patient-view-appointment' page after successful form submission
+        return HttpResponseRedirect(reverse('patient-view-appointment'))
+
+"""
 @login_required(login_url='clientlogin')
 @user_passes_test(is_client)
 def client_view_appointment_view(request):
+    # Retrieve the Client instance associatedwith the logged-in user (for profile picture)
     client=models.Client.objects.get(user_id=request.user.id) #for profile picture of patient in sidebar
+    # Get all appointments that belong to the logged-in client
     appointments=models.Appointment.objects.all().filter(clientId=request.user.id)
+    # Render the template
     return render(request,'innovacare/patient_view_appointment.html',{'appointments':appointments,'client':client})
-
-class ClientViewAppointmentView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+"""
+class ClientViewAppointmentView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = models.Appointment
+    context_object_name = 'appointments'
     template_name = 'innovacare/client_view_appointment.html'
     login_url = 'clientlogin'
 
@@ -1941,21 +2080,31 @@ class ClientViewAppointmentView(LoginRequiredMixin, UserPassesTestMixin, Templat
         # Check if user is belong to the CLIENT group, allow access if True
         return self.request.user.groups.filter(name='CLIENT').exists()
     
+    # Override the get_queryset method to filter appointments by the logged-in client
+    def get_queryset(self):
+        # Return the queryset filtered to only show appointments for the logged-in client
+        return models.Appointment.objects.filter(clientId=self.request.user.id)
+    # Override the get_context_data method to pass additional data to the template
     def get_context_data(self, **kwargs):
+        # Get the default context data (if any)
         context = super().get_context_data(**kwargs)
+        # Retrieive the client instance associated with the logged-in user for the profile picture
         client = models.Client.objects.get(user_id=self.request.user.id)
-        appointments = models.Appointment.objects.all().filter(clientId=self.request.user.id)
         context['client'] = client
-        context['appointments'] = appointments
         return context
-
+"""
 @login_required(login_url='clientlogin')
 @user_passes_test(is_client)
 def client_discharge_view(request):
+    # Retrieive the Client instance associated with the logged-in user (for profile picture)
     client=models.Client.objects.get(user_id=request.user.id) #for profile picture of patient in sidebar
+    # Retrieive the most recent discharge details for the logged-in client, ordering by desacending ID and limiting to 1
     dischargeDetails=models.ClientDischargeDetails.objects.all().filter(clientId=client.id).order_by('-id')[:1]
+    # Initialize a variable to hold discharge details to be passed to the template
     clientDict=None
+    # Check if there are discharge details available for the client
     if dischargeDetails:
+        # If discharge details exist, construct a dictionary with all required data
         patientDict ={
         'is_discharged':True,
         'client':client,
@@ -1974,43 +2123,120 @@ def client_discharge_view(request):
         'OtherCharge':dischargeDetails[0].OtherCharge,
         'total':dischargeDetails[0].total,
         }
+        # Optional print statement for debugging (can be removed in production)
         print(patientDict)
     else:
-        patientDict={
+        # If no discharge details, create a default dictionary indicating that the client is not discharged
+        clientDict={
             'is_discharged':False,
             'client':client,
-            'patientId':request.user.id,
+            'clientId':request.user.id,
         }
     return render(request,'innovacare/patient_discharge.html',context=clientDict)
+"""
 
+class ClientDischargeView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = 'innovacare/patient_discharge.html'
+    login_url = 'clientlogin'
 
-#------------------------ PATIENT RELATED VIEWS END ------------------------------
+    # Ensure only clients can access this view
+    def test_func(self):
+        return self.request.user.groups.filter(name='CLIENT').exists()
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+    
+        # Retrieve the Client instance associated with the logged-in user for the sidebar/profile
+        client = models.Client.objects.get(user_id=self.request.user.id)
+        # Retrieive the most recent discharge details for the client, ordering by descending ID, limiting to 1
+        discharge_details = models.ClientDischargeDetails.objects.filter(clientId=client.id).order_by('-id')[:1]
+
+        # Check if the client has any discharge details
+        if discharge_details:
+            # If discharge details exist, construct a dictionary with all required data
+            context['is_discharged'] = True
+            context['client'] = client
+            context['clientId'] = client.id
+            context['clientName'] = client.get_name
+            context['assignedDoctorName'] = discharge_details[0].assignedDoctorName
+            context['address'] = client.address
+            context['mobile'] = client.mobile
+            context['symptoms'] = client.symptoms
+            context['admitDate'] = client.admitDate
+            context['releaseDate'] = discharge_details[0].releaseDate
+            context['daySpent'] = discharge_details[0].daySpent
+            context['medicineCost'] = discharge_details[0].medicineCost
+            context['roomCharge'] = discharge_details[0].roomCharge
+            context['doctorFee'] = discharge_details[0].doctorFee
+            context['OtherCharge'] = discharge_details[0].OtherCharge
+            context['total'] = discharge_details[0].total
+        else:
+            # If no discharge details, pass a default context indicating the client is not discharged
+            context['is_discharged'] = False
+            context['client'] = client
+            context['clientId'] = self.request.user.id
+        
+        return context
+
+#------------------------ CLIENT RELATED VIEWS END ------------------------------
 #---------------------------------------------------------------------------------
-
-
-
-
-
-
 
 
 #---------------------------------------------------------------------------------
 #------------------------ ABOUT US AND CONTACT US VIEWS START ------------------------------
 #---------------------------------------------------------------------------------
+"""
 def aboutus_view(request):
     return render(request,'innovacare/aboutus.html')
+"""
+class AboutUsView(TemplateView):
+    template_name = 'innovacare/aboutus.html'
 
 def contactus_view(request):
+    # Create an instance of the ContactusForm
     sub = forms.ContactusForm()
+    # Check if the form is submitted via POST method
     if request.method == 'POST':
+        # Recreate the form with the submitted data
         sub = forms.ContactusForm(request.POST)
+        # Validate the form data
         if sub.is_valid():
+            # Extract the cleaned data from the form
             email = sub.cleaned_data['Email']
             name=sub.cleaned_data['Name']
             message = sub.cleaned_data['Message']
+            # Send an email with the form details
             send_mail(str(name)+' || '+str(email),message,settings.EMAIL_HOST_USER, settings.EMAIL_RECEIVING_USER, fail_silently = False)
+            # Render the success page after sending the email
             return render(request, 'innovacare/contactussuccess.html')
+    # Render the contact form page
     return render(request, 'innovacare/contactus.html', {'form':sub})
+
+class ContactUsView(FormView):
+    # Specify the form class
+    form_class = ContactusForm
+    # Specify the template to render
+    template_name = 'innovacare/contactus.html'
+    # Success URL to redirect upon successful form submission
+    success_url = reverse_lazy('contactus_success')
+
+    # Process the form submission
+    def form_valid(self, form):
+        # Extract data from the form
+        email = form.cleaned_data['Email']
+        name = form.cleaned_data['Name']
+        message = form.cleaned_data['Message']
+
+        # Send an email with the form data
+        send_mail(
+            str(name) + ' || ' + str(email), # Email subject
+            message, # Email message body
+            settings.EMAIL_HOST_USE, # Sender email
+            settings.EMAIL_RECEIVING_USER, # Recipient email
+            fail_silently = False # Raise error if sending fails
+        )
+        # Return the default form_valid behavior (redirect to success URL)
+        return super().form_valid(form)
 
 
 #---------------------------------------------------------------------------------
