@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+import uuid
 
 User = get_user_model()
 
@@ -8,6 +9,11 @@ title = [('Primary Care Physician','Primary Care Physician'),
          ('Specialist', 'Specialist')]
 
 class Physician(models.Model):
+    physician_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     user = models.OneToOneField(User,on_delete=models.CASCADE)
     profile_pic = models.ImageField(upload_to='profile_pic/PhysicianProfilePic/',null=True,blank=True)
     address = models.CharField(max_length=40)
@@ -24,12 +30,17 @@ class Physician(models.Model):
         return "{} ({})".format(self.user.first_name,self.title)
 
 class Client(models.Model):
+    client_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
     user = models.OneToOneField(User,on_delete=models.CASCADE)
     profile_pic = models.ImageField(upload_to='profile_pic/ClientProfilePic/',null=True,blank=True)
     address = models.CharField(max_length=40)
     mobile = models.CharField(max_length=20,null=False)
     health_details = models.CharField(max_length=500,null=False)
-    assignedPhysicianId = models.PositiveIntegerField(null=True)
+    assignedPhysicianId =  models.ForeignKey(Physician, on_delete=models.SET_NULL, null=True, blank=True)
     admitDate = models.DateField(auto_now=True)
     status = models.BooleanField(default=False)
     @property
@@ -42,18 +53,25 @@ class Client(models.Model):
         return self.user.first_name+" ("+self.health_details+")"
     
 class Appointment(models.Model):
-    clientId = models.PositiveIntegerField(null=True)
-    physicianId = models.PositiveIntegerField(null=True)
-    clientName = models.CharField(max_length=40,null=True)
-    physicianName = models.CharField(max_length=40,null=True)
+    appointment_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    clientId = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True)
+    physicianId = models.ForeignKey(Physician, on_delete=models.SET_NULL, null=True, blank=True)
     appointmentDate = models.DateField(auto_now=True)
     description = models.TextField(max_length=500)
     status = models.BooleanField(default=False)
 
 class ClientDischargeDetails(models.Model):
-    clientId = models.PositiveIntegerField(null=True)
-    clientName = models.CharField(max_length=40)
-    assignedPhysicianName = models.CharField(max_length=40)
+    clientdischarge_id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False
+    )
+    clientId = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, blank=True)
+    assignedPhysicianName = models.ForeignKey(Physician, on_delete=models.SET_NULL, null=True, blank=True)
     address = models.CharField(max_length=40)
     mobile = models.CharField(max_length=20,null=True)
     health_status = models.CharField(max_length=100,null=True)

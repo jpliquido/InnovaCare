@@ -54,6 +54,7 @@ from .views import (
                     ClientViewAppointmentView,
                     ClientDischargeView,
                     AboutUsView,
+                    ContactUsView,
                     )
 
 
@@ -66,7 +67,8 @@ urlpatterns = [
     # path('aboutus/', views.aboutus_view, name='about-us'),
     path('aboutus/', AboutUsView.as_view(), name='about-us'),
 
-    path('contactus/', views.contactus_view, name='contact-us'),
+    # path('contactus/', views.contactus_view, name='contact-us'),
+    path('contactus/', ContactUsView.as_view(), name='contact-us'),
 
     # path('adminclick/', views.adminclick_view, name='adminclick'),
     path('adminclick/', AdminClickView.as_view(), name='adminclick'),
@@ -99,17 +101,17 @@ urlpatterns = [
     # path('admin-view-physician/', views.admin_view_physician_view,name='admin-view-physician'),
     path('admin-view-physician/', AdminViewPhysicianView.as_view(), name='admin-view-physician'),
     # path('delete-physician-from-records/<int:pk>', views.delete_physician_from_records_view,name='delete-physician-from-records'),
-    path('delete-physician-from-records/<int:pk>', DeletePhysicianFromRecordsView.as_view(), name='delete-physician-from-records'),
+    path('delete-physician-from-records/<uuid:pk>', DeletePhysicianFromRecordsView.as_view(), name='delete-physician-from-records'),
     # path('update-physician/<int:pk>', views.update_physician_view,name='update-physician'),
-    path('update-physician/<int:pk>', UpdatePhysicianView.as_view(), name='update-physician'),
+    path('update-physician/<uuid:pk>', UpdatePhysicianView.as_view(), name='update-physician'),
     # path('admin-add-physician', views.admin_add_physician_view,name='admin-add-physician'),
     path('admin-add-physician', AdminAddPhysicianView.as_view(), name='admin-add-physician'),
     #path('admin-approve-physician', views.admin_approve_physician_view,name='admin-approve-physician'),
     path('admin-approve-physician', AdminApprovePhysicianView.as_view(), name='admin-approve-physician'),
     # path('approve-physician/<int:pk>', views.approve_physician_view,name='approve-physician'),
-    path('approve-physician/<int:pk>', ApprovePhysicianView.as_view(), name='approve-physician'),
+    path('approve-physician/<uuid:pk>', ApprovePhysicianView.as_view(), name='approve-physician'),
     # path('reject-physician/<int:pk>', views.reject_physician_view,name='reject-physician'),
-    path('reject-physician/<int:pk>', RejectPhysicianView.as_view(), name='reject-physician'),
+    path('reject-physician/<uuid:pk>', RejectPhysicianView.as_view(), name='reject-physician'),
     # path('admin-view-physician-specialisation',views.admin_view_physician_specialisation_view,name='admin-view-physician-specialisation'),
     path('admin-view-physician-specialisation', AdminViewPhysicianSpecialisationView.as_view(), name='admin-view-physician-specialisation'),
 
@@ -118,22 +120,22 @@ urlpatterns = [
     # path('admin-view-client/', views.admin_view_client_view,name='admin-view-client'),
     path('admin-view-client', AdminViewClientView.as_view(), name='admin-view-client'),
     # path('delete-client/<int:pk>/', views.delete_client_view,name='delete-client'),
-    path('delete-client/<int:pk>/', DeleteClientView.as_view(), name='delete-client'),
+    path('delete-client/<uuid:pk>/', DeleteClientView.as_view(), name='delete-client'),
     # path('update-patient/<int:pk>', views.update_patient_view,name='update-patient'),
-    path('update-client-view/<int:pk>', UpdateClientView.as_view(), name='update-client'),
+    path('update-client-view/<uuid:pk>', UpdateClientView.as_view(), name='update-client'),
     # path('admin-add-client/', views.admin_add_client_view,name='admin-add-client'),
     path('admin-add-client/', AdminAddClientView.as_view(), name='admin-add-client'),
     # path('admin-approve-client/', views.admin_approve_client_view,name='admin-approve-client'),
     path('admin-approve-client/', AdminApproveClientView.as_view(), name='admin-approve-client'),
     # path('approve-client/<int:pk>', views.approve_client_view,name='approve-client'),
-    path('approve-client/<int:pk>', ApproveClientView.as_view(), name='approve-client'),
+    path('approve-client/<uuid:pk>', ApproveClientView.as_view(), name='approve-client'),
     # path('reject-client/<int:pk>', views.reject_client_view,name='reject-client'),
-    path('confirm-reject-client/<int:pk>', ConfirmRejectClientView.as_view(), name='confirm-reject-client'),
-    path('reject-client/<int:pk>', RejectClientView.as_view(), name='reject-client'),
+    path('confirm-reject-client/<uuid:pk>', ConfirmRejectClientView.as_view(), name='confirm-reject-client'),
+    path('reject-client/<uuid:pk>', RejectClientView.as_view(), name='reject-client'),
     # path('admin-discharge-client/', views.admin_discharge_client_view,name='admin-discharge-client'),
     path('admin-discharge-client/', AdminDischargeClientView.as_view(), name='admin-discharge-client'),
     # path('discharge-patient/<int:pk>', views.discharge_patient_view,name='discharge-patient'),
-    path('discharge-client/<int:pk>', DischargeClientView.as_view(), name='discharge-client'),
+    path('discharge-client/<uuid:pk>', DischargeClientView.as_view(), name='discharge-client'),
     # path('download-pdf/<int:pk>', views.download_pdf_view,name='download-pdf'),
 
     # path('admin-appointment', views.admin_appointment_view,name='admin-appointment'),
@@ -145,9 +147,9 @@ urlpatterns = [
     # path('admin-approve-appointment', views.admin_approve_appointment_view,name='admin-approve-appointment'),
     path('admin-approve-appointment', AdminApproveAppointmentView.as_view(), name='admin-approve-appointment'),
     # path('approve-appointment/<int:pk>', views.approve_appointment_view,name='approve-appointment'),
-    path('approve-appointment/<int:pk>', ApproveAppointmentView.as_view(), name='approve-appointment'),
+    path('approve-appointment/<uuid:pk>', ApproveAppointmentView.as_view(), name='approve-appointment'),
     # path('reject-appointment/<int:pk>', views.reject_appointment_view,name='reject-appointment'),
-    path('reject-appointment/<int:pk>', RejectAppointmentView.as_view(), name='reject-appointment'),
+    path('reject-appointment/<uuid:pk>', RejectAppointmentView.as_view(), name='reject-appointment'),
 ]
 
 
@@ -170,7 +172,7 @@ urlpatterns +=[
     # path('physician-delete-appointment',views.physician_delete_appointment_view,name='physician-delete-appointment'),
     path('physician-delete-appointment', PhysicianDeleteAppointmentView.as_view(), name='physician-delete-appointment'),
     # path('delete-appointment/<int:pk>', views.delete_appointment_view,name='delete-appointment'),
-    path('delete-appointment/<int:pk>', DeleteAppointmentView.as_view(), name='delete-appointment'),
+    path('delete-appointment/<uuid:pk>', DeleteAppointmentView.as_view(), name='delete-appointment'),
 ]
 
 

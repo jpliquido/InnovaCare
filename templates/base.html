@@ -24,7 +24,7 @@
         <a class="p-2 text-dark" href="" style="text-decoration: none;">Profile</a>
         <form method="post" action="{% url 'logout' %}">
           {% csrf_token %}
-          <button class="btn btn-outline ml-2" type="submit">Logout</button>
+          <button class="btn btn-outline" type="submit">Logout</button>
         </form>
         {% else %}
         <a class="p-2 text-dark" href="{% url 'login' %}" style="text-decoration: none;">Log In</a>

@@ -395,8 +395,8 @@ class AdminDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
         context = super().get_context_data(**kwargs)
 
         # Fetch physicians and clients ordered by descending ID
-        context['physicians'] = models.Physician.objects.all().order_by('-id')
-        context['clients'] = models.Client.objects.all().order_by('-id')
+        context['physicians'] = models.Physician.objects.all().order_by('-physician_id')
+        context['clients'] = models.Client.objects.all().order_by('-client_id')
 
         # Get various counts for physicians, clients, and appointments
         context['physiciancount'] = models.Physician.objects.filter(status=True).count()
@@ -677,15 +677,16 @@ class ApprovePhysicianView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = models.Physician
     # Fields to update, in this case, only the 'status' field
     fields = ['status']
+    template_name = 'innovacare/physician_form.html'
     # URL to redirect to after successful approval
-    success_url = reverse_lazy('admin-approve-physician')
+    success_url = reverse_lazy('admin-view-physician')
     login_url = 'adminlogin'
 
     def form_valid(self, form):
         # Set the physician's status to True (approved)
         form.instance.status = True
         # Save the form an redirect to the success URL
-        return super.form_valid(form)
+        return super().form_valid(form)
     
     def test_func(self):
         # Restrict access to users in the 'ADMIN' group
@@ -953,6 +954,7 @@ class AdminAddClientView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         context = super().get_context_data(**kwargs)
         # Add the ClientUserForm to the context, either with POST data or as unbound form
         context['userForm'] = self.get_user_form()  # ClientUserForm(self.request.POST or None)
+        context['clientForm'] = ClientForm(self.request.POST, self.request.FILES)
         # Return the updated context
         return context
     
@@ -979,7 +981,7 @@ class AdminAddClientView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         # Call the parent class's form_valid method to handle redirection
         return super().form_valid(form)
 
-    def test_fuc(self):
+    def test_func(self):
         # Restrict access to users in the 'ADMIN' group
         return self.request.user.groups.filter(name='ADMIN').exists()
 
@@ -1019,15 +1021,19 @@ def approve_client_view(request,pk):
     return redirect(reverse('admin-approve-client')) # Redirect to the 'admin-approve-client' URL
 """
 
-class ApproveClientView(LoginRequiredMixin, UserPassesTestMixin, View):
+class ApproveClientView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = models.Client
+    fields = ['status']
+    template_name = 'innovacare/client_form.html'
+    success_url = reverse_lazy('admin-view-client')
     login_url = 'adminlogin'
 
-    def post(self, request, pk, *args, **kwargs):
-        client = models.Client.objects.get(id=pk) # Retrieve the Client object with the given primary key (pk)
-        client.status = True # Set the status of the client to True (approve the client)
-        client.save() # Save the changes to the database
-        return redirect(reverse('admin-approve-client')) # Redirect to the 'admin-approve-client' URL
-    
+    def form_valid(self, form):
+        # Set the client's status to True (approved)
+        form.instance.status = True
+        # Save the form and redirect to the success URL
+        return super().form_valid(form)
+
     def test_func(self):
         # Check if ther user is an admin
         return self.request.user.groups.filter(name='ADMIN').exists()
@@ -2211,7 +2217,7 @@ def aboutus_view(request):
 """
 class AboutUsView(TemplateView):
     template_name = 'innovacare/aboutus.html'
-
+"""
 def contactus_view(request):
     # Create an instance of the ContactusForm
     sub = forms.ContactusForm()
@@ -2231,7 +2237,7 @@ def contactus_view(request):
             return render(request, 'innovacare/contactussuccess.html')
     # Render the contact form page
     return render(request, 'innovacare/contactus.html', {'form':sub})
-
+"""
 class ContactUsView(FormView):
     # Specify the form class
     form_class = ContactusForm

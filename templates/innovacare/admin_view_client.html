@@ -42,11 +42,11 @@
       <tr>
         <td> {{c.get_name}}</td>
         <td> <img src="{% static c.profile_pic.url %}" alt="Profile Pic" height="40px" width="40px" /></td>
-        <td>{{c.symptoms}}</td>
+        <td>{{c.health_details}}</td>
         <td>{{c.mobile}}</td>
         <td>{{c.address}}</td>
-        <td><a class="btn btn-primary btn-xs" href="{% url 'update-patient' c.id  %}"><span class="glyphicon glyphicon-edit"></span></a></td>
-        <td><a class="btn btn-danger btn-xs" href="{% url 'delete-client' c.id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
+        <td><a class="btn btn-primary btn-xs" href="{% url 'update-client' c.client_id  %}"><span class="glyphicon glyphicon-edit"></span></a></td>
+        <td><a class="btn btn-danger btn-xs" href="{% url 'delete-client' c.client_id  %}"><span class="glyphicon glyphicon-trash"></span></a></td>
       </tr>
       {% endfor %}
     </table>
